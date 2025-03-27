@@ -59,6 +59,14 @@ export class UserService {
 
     return { token, user: { id: user.id, name: user.name, email: user.email } };
   }
+  async getAllUsers() {
+    const query = `
+      SELECT id, name, email
+      FROM users
+    `;
+    const result = await this.pool.query(query);
+    return result.rows;
+  }
 
   async getUserById(id: number) {
     const query = `

@@ -5,6 +5,7 @@ import reportRoutes from "./routes/reports";
 import weatherRoutes from "./routes/weather";
 import { errorHandler } from "./middleware/error";
 import authRoutes from "./routes/auth";
+import userRoutes from "./routes/users";
 
 dotenv.config();
 
@@ -19,6 +20,8 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/weather", weatherRoutes);
+app.use("/api/users", userRoutes);
+
 // Error handling
 app.use(errorHandler);
 

@@ -13,7 +13,7 @@ const ReportForm: React.FC = () => {
   const [location, setLocation] = useState({ latitude: 0, longitude: 0 });
   const [locationName, setLocationName] = useState("");
   const [hoursFishing, setHoursFishing] = useState("");
-  const [numberOfPersons, setNumberOfPersons] = useState("");
+  const [numberOfPersons, setNumberOfPersons] = useState("1");
   const [numberOfFish, setNumberOfFish] = useState("");
   const [fishOver40cm, setFishOver40cm] = useState("");
   const [bonusPike, setBonusPike] = useState("");
@@ -24,6 +24,12 @@ const ReportForm: React.FC = () => {
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [lunarData, setLunarData] = useState<LunarData | null>(null);
   const [error, setError] = useState("");
+  const [selectedBuddies, setSelectedBuddies] = useState<
+    Array<{ id: number; name: string }>
+  >([]);
+  const [availableBuddies, setAvailableBuddies] = useState<
+    Array<{ id: number; name: string }>
+  >([]);
 
   useEffect(() => {
     if (useCurrentLocation) {
@@ -42,6 +48,29 @@ const ReportForm: React.FC = () => {
       );
     }
   }, [useCurrentLocation]);
+
+  useEffect(() => {
+    const fetchBuddies = async () => {
+      try {
+        const response = await axios.get("http://localhost:3003/api/users", {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
+        setAvailableBuddies(response.data);
+      } catch (error) {
+        console.error("Error fetching buddies:", error);
+      }
+    };
+
+    fetchBuddies();
+  }, []);
+
+  useEffect(() => {
+    // Number of persons is current user + number of buddies
+    const defaultPersons = (selectedBuddies.length + 1).toString();
+    setNumberOfPersons(defaultPersons);
+  }, [selectedBuddies]);
 
   const fetchWeatherData = async (lat: number, lon: number) => {
     try {
@@ -106,6 +135,7 @@ const ReportForm: React.FC = () => {
         comment: comment || null,
         weather_data: weatherData || null,
         lunar_phase: lunarData || null,
+        buddy_ids: selectedBuddies.map((buddy) => buddy.id),
       };
 
       await axios.post("http://localhost:3003/api/reports", reportData, {
@@ -121,7 +151,7 @@ const ReportForm: React.FC = () => {
       setLocation({ latitude: 0, longitude: 0 });
       setLocationName("");
       setHoursFishing("");
-      setNumberOfPersons("");
+      setNumberOfPersons("1");
       setNumberOfFish("");
       setFishOver40cm("");
       setBonusPike("");
@@ -131,6 +161,7 @@ const ReportForm: React.FC = () => {
       setComment("");
       setWeatherData(null);
       setLunarData(null);
+      setSelectedBuddies([]);
       setError("");
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.data?.error) {
@@ -289,6 +320,83 @@ const ReportForm: React.FC = () => {
           </div>
 
           <div style={fullWidthStyle}>
+            <label style={labelStyle}>Fishing Buddies</label>
+            <div
+              style={{
+                border: "1px solid #ddd",
+                borderRadius: "4px",
+                padding: "8px",
+                minHeight: "100px",
+              }}
+            >
+              <div style={{ marginBottom: "8px" }}>
+                {selectedBuddies.map((buddy) => (
+                  <span
+                    key={buddy.id}
+                    style={{
+                      background: "#e0e0e0",
+                      padding: "4px 8px",
+                      borderRadius: "16px",
+                      margin: "0 4px 4px 0",
+                      display: "inline-block",
+                    }}
+                  >
+                    {buddy.name}
+                    <button
+                      onClick={() =>
+                        setSelectedBuddies((prev) =>
+                          prev.filter((b) => b.id !== buddy.id)
+                        )
+                      }
+                      style={{
+                        marginLeft: "4px",
+                        border: "none",
+                        background: "none",
+                        cursor: "pointer",
+                      }}
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+
+              <select
+                style={inputStyle}
+                value=""
+                onChange={(e) => {
+                  const selectedId = parseInt(e.target.value);
+                  const buddy = availableBuddies.find(
+                    (b) => b.id === selectedId
+                  );
+                  if (
+                    buddy &&
+                    !selectedBuddies.some(
+                      (selected) => selected.id === buddy.id
+                    )
+                  ) {
+                    setSelectedBuddies((prev) => [...prev, buddy]);
+                  }
+                }}
+              >
+                <option value="">Select fishing buddies...</option>
+                {availableBuddies
+                  .filter(
+                    (buddy) =>
+                      !selectedBuddies.some(
+                        (selected) => selected.id === buddy.id
+                      )
+                  )
+                  .map((buddy) => (
+                    <option key={buddy.id} value={buddy.id}>
+                      {buddy.name}
+                    </option>
+                  ))}
+              </select>
+            </div>
+          </div>
+
+          <div style={fullWidthStyle}>
             <label style={switchContainerStyle}>
               <div style={switchStyle}>
                 <input
@@ -347,6 +455,7 @@ const ReportForm: React.FC = () => {
                 style={inputStyle}
                 value={numberOfPersons}
                 onChange={(e) => setNumberOfPersons(e.target.value)}
+                placeholder={`Default: ${selectedBuddies.length + 1}`}
                 required
               />
             </label>
