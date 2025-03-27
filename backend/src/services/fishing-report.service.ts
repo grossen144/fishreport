@@ -14,13 +14,13 @@ export class FishingReportService {
   ): Promise<FishingReport> {
     const query = `
       INSERT INTO fishing_reports (
-        user_id, species, date, hours_fished,
+        user_id, species, date, location, hours_fished,
         number_of_persons, number_of_fish, fish_over_40cm,
         bonus_pike, bonus_zander, water_temperature,
         bag_total, comment, latitude, longitude,
         weather_data, lunar_phase
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
       RETURNING *
     `;
 
@@ -28,6 +28,7 @@ export class FishingReportService {
       userId,
       data.species,
       data.date,
+      data.location,
       data.hours_fished,
       data.number_of_persons,
       data.number_of_fish,

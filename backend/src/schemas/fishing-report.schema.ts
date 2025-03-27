@@ -10,6 +10,7 @@ export type FishSpecies = z.infer<typeof FishSpecies>;
 export const fishingReportSchema = z.object({
   species: FishSpecies,
   date: z.string().transform((str) => new Date(str)),
+  location: z.string().nullable(),
   latitude: z.number().min(-90).max(90).nullable(),
   longitude: z.number().min(-180).max(180).nullable(),
   hours_fished: z.number().min(0, "Hours fished must be positive"),
