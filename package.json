@@ -1,0 +1,7 @@
+{
+  "workspaces": [
+    "frontend",
+    "backend",
+    "shared"
+  ]
+}
