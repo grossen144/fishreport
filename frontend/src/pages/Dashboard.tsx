@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useAuth } from "../contexts/AuthContext";
+import { FishingReport } from "../types/fishing";
 
 interface DashboardStats {
   totalReports: number;
@@ -9,11 +10,11 @@ interface DashboardStats {
   mostCommonSpecies: string;
   bestLocation: string;
   recentReports: Array<{
-    id: string;
+    id: number;
     date: string;
     species: string;
     numberOfFish: number;
-    locationName: string;
+    location: string;
   }>;
 }
 
@@ -25,15 +26,62 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await axios.get(
-          "http://localhost:3003/api/reports/stats",
+        const response = await axios.get<FishingReport[]>(
+          "http://localhost:3003/api/reports",
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`,
             },
           }
         );
-        setStats(response.data);
+
+        const reports = response.data;
+        const totalReports = reports.length;
+        const totalFish = reports.reduce(
+          (sum, report) => sum + report.number_of_fish,
+          0
+        );
+        const averageFishPerTrip =
+          totalReports > 0 ? totalFish / totalReports : 0;
+
+        // Count species occurrences
+        const speciesCount = reports.reduce((acc, report) => {
+          acc[report.species] = (acc[report.species] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>);
+
+        const mostCommonSpecies =
+          Object.entries(speciesCount).sort(
+            ([, a], [, b]) => (b as number) - (a as number)
+          )[0]?.[0] || "No reports yet";
+
+        // Count location occurrences
+        const locationCount = reports.reduce((acc, report) => {
+          acc[report.location] = (acc[report.location] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>);
+
+        const bestLocation =
+          Object.entries(locationCount).sort(
+            ([, a], [, b]) => (b as number) - (a as number)
+          )[0]?.[0] || "No reports yet";
+
+        const stats: DashboardStats = {
+          totalReports,
+          totalFish,
+          averageFishPerTrip,
+          mostCommonSpecies,
+          bestLocation,
+          recentReports: reports.slice(0, 5).map((report) => ({
+            id: report.id!,
+            date: report.date,
+            species: report.species,
+            numberOfFish: report.number_of_fish,
+            location: report.location,
+          })),
+        };
+
+        setStats(stats);
       } catch (error) {
         setError("Error fetching dashboard stats, " + error);
       }
@@ -193,7 +241,7 @@ const Dashboard: React.FC = () => {
               </p>
               <p style={reportDetailStyle}>Species: {report.species}</p>
               <p style={reportDetailStyle}>Fish: {report.numberOfFish}</p>
-              <p style={reportDetailStyle}>Location: {report.locationName}</p>
+              <p style={reportDetailStyle}>Location: {report.location}</p>
             </div>
           ))}
         </div>

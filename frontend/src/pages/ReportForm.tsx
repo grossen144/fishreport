@@ -91,19 +91,34 @@ const ReportForm: React.FC = () => {
       const reportData = {
         species,
         date,
-        latitude: location.latitude,
-        longitude: location.longitude,
-        locationName,
-        hoursFishing: parseFloat(hoursFishing),
-        numberOfPersons: parseInt(numberOfPersons),
-        numberOfFish: parseInt(numberOfFish),
-        fishOver40cm: parseInt(fishOver40cm),
-        bonusPike: parseInt(bonusPike),
-        bonusZander: parseInt(bonusZander),
-        waterTemperature: parseFloat(waterTemperature),
-        bagTotal: parseFloat(bagTotal),
-        comment,
-        ...weatherData,
+        latitude: location.latitude || null,
+        longitude: location.longitude || null,
+        location: locationName,
+        hours_fished: parseFloat(hoursFishing) || 0,
+        number_of_persons: parseInt(numberOfPersons) || 1,
+        number_of_fish: parseInt(numberOfFish) || 0,
+        fish_over_40cm: parseInt(fishOver40cm) || null,
+        bonus_pike: parseInt(bonusPike) || null,
+        bonus_zander: parseInt(bonusZander) || null,
+        water_temperature: parseFloat(waterTemperature) || null,
+        bag_total: parseFloat(bagTotal) || null,
+        comment: comment || null,
+        weather_data: weatherData
+          ? {
+              temperature: weatherData.main.temp,
+              wind_speed: weatherData.wind.speed,
+              wind_direction: getWindDirection(weatherData.wind.deg || 0),
+              weather_condition: weatherData.weather[0].description,
+              pressure: weatherData.main.pressure,
+            }
+          : null,
+        lunar_phase: lunarData
+          ? {
+              phase: lunarData[0]?.Moon[0],
+              illumination: lunarData[0]?.Illumination,
+              age: lunarData[0]?.Age,
+            }
+          : null,
       };
 
       await axios.post("http://localhost:3003/api/reports", reportData, {

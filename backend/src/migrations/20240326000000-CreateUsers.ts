@@ -1,19 +1,15 @@
-import { Knex } from "knex";
+const { Knex } = require("knex");
 
-export async function up(knex: Knex): Promise<void> {
-  return knex.schema.createTable("users", (table) => {
+exports.up = async function (knex) {
+  await knex.schema.createTable("users", (table) => {
     table.increments("id").primary();
     table.string("name").notNullable();
     table.string("email").notNullable().unique();
     table.string("password").notNullable();
-    table.timestamp("created_at").defaultTo(knex.fn.now()).notNullable();
-    table.timestamp("updated_at").defaultTo(knex.fn.now()).notNullable();
-
-    // Create index on email for faster lookups
-    table.index("email");
+    table.timestamps(true, true);
   });
-}
+};
 
-export async function down(knex: Knex): Promise<void> {
-  return knex.schema.dropTable("users");
-}
+exports.down = async function (knex) {
+  await knex.schema.dropTableIfExists("users");
+};
