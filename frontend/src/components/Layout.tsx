@@ -149,7 +149,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </li>
           ))}
           <li style={listItemStyle}>
-            <button style={listItemButtonStyle(false)} onClick={logout}>
+            <button
+              style={listItemButtonStyle(false)}
+              onClick={() => {
+                logout();
+                navigate("/");
+              }}
+            >
               <span style={listItemTextStyle}>Logout</span>
             </button>
           </li>

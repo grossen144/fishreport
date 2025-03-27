@@ -1,7 +1,8 @@
 import { Request, Response } from "express";
 import { FishingReportService } from "../services/fishing-report.service";
-import { db } from "../services/db.service";
+import { pool } from "../services/db.service";
 import { weatherSchema } from "@fishreport/shared/types/weather";
+import { ZodError } from "zod";
 
 declare global {
   namespace Express {
@@ -19,7 +20,7 @@ export class ReportController {
   private fishingReportService: FishingReportService;
 
   constructor() {
-    this.fishingReportService = new FishingReportService(db);
+    this.fishingReportService = new FishingReportService(pool);
   }
 
   createReport = async (req: Request, res: Response) => {
@@ -32,6 +33,9 @@ export class ReportController {
       const report = await this.fishingReportService.create(userId, req.body);
       return res.status(201).json(report);
     } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
       if (error instanceof Error) {
         return res.status(400).json({ error: error.message });
       }

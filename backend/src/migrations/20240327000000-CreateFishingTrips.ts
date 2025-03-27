@@ -1,44 +1,45 @@
-const { Knex } = require("knex");
+import { Pool } from "pg";
 
-exports.up = async function (knex) {
-  await knex.schema.createTable("fishing_trips", (table) => {
-    table.increments("id").primary();
-    table.integer("user_id").notNullable().references("id").inTable("users");
-    table.string("name").notNullable();
-    table.date("date").notNullable();
-    table.decimal("water_temperature", 4, 1).nullable();
-    table.decimal("hours_fishing", 4, 1).nullable();
-    table.integer("number_of_persons").nullable();
-    table.integer("total_fish").nullable();
-    table.decimal("bag_total", 6, 2).nullable();
-    table.integer("bonus_zander").nullable();
-    table.integer("fish_over_40").nullable();
-    table.text("comment").nullable();
-    table.jsonb("weather_data").nullable();
-    table.jsonb("lunar_phase").nullable();
-    table.string("target_species").notNullable().defaultTo("perch");
-    table.timestamps(true, true);
-  });
+exports.up = async function (pool: Pool) {
+  await pool.query(`
+    CREATE TABLE fishing_trips (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id),
+      name VARCHAR(255) NOT NULL,
+      date DATE NOT NULL,
+      water_temperature DECIMAL(4,1),
+      hours_fishing DECIMAL(4,1),
+      number_of_persons INTEGER,
+      total_fish INTEGER,
+      bag_total DECIMAL(6,2),
+      bonus_zander INTEGER,
+      fish_over_40 INTEGER,
+      comment TEXT,
+      weather_data JSONB,
+      lunar_phase JSONB,
+      target_species VARCHAR(255) NOT NULL DEFAULT 'perch',
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
 
-  await knex.schema.createTable("catches", (table) => {
-    table.increments("id").primary();
-    table
-      .integer("trip_id")
-      .notNullable()
-      .references("id")
-      .inTable("fishing_trips")
-      .onDelete("CASCADE");
-    table.string("species").notNullable();
-    table.decimal("weight_grams").notNullable();
-    table.decimal("length_cm").notNullable();
-    table.decimal("latitude", 10, 8).nullable();
-    table.decimal("longitude", 11, 8).nullable();
-    table.timestamp("caught_at").notNullable();
-    table.timestamps(true, true);
-  });
+  await pool.query(`
+    CREATE TABLE catches (
+      id SERIAL PRIMARY KEY,
+      trip_id INTEGER NOT NULL REFERENCES fishing_trips(id) ON DELETE CASCADE,
+      species VARCHAR(255) NOT NULL,
+      weight_grams DECIMAL(10,2) NOT NULL,
+      length_cm DECIMAL(10,2) NOT NULL,
+      latitude DECIMAL(10,8),
+      longitude DECIMAL(11,8),
+      caught_at TIMESTAMP WITH TIME ZONE NOT NULL,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
 };
 
-exports.down = async function (knex) {
-  await knex.schema.dropTableIfExists("catches");
-  await knex.schema.dropTableIfExists("fishing_trips");
+exports.down = async function (pool: Pool) {
+  await pool.query(`DROP TABLE IF EXISTS catches;`);
+  await pool.query(`DROP TABLE IF EXISTS fishing_trips;`);
 };

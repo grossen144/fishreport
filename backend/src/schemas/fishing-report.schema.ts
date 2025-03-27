@@ -1,4 +1,8 @@
 import { z } from "zod";
+import {
+  lunarDataSchema,
+  weatherSchema,
+} from "@fishreport/shared/types/weather";
 
 export const FishSpecies = z.enum(["perch", "pike", "zander"]);
 export type FishSpecies = z.infer<typeof FishSpecies>;
@@ -31,8 +35,8 @@ export const fishingReportSchema = z.object({
   wind_speed: z.number().min(0).max(200).optional(),
   wind_direction: z.string().optional(),
   weather_condition: z.string().optional(),
-  lunar_phase: z.string().optional(),
-  weather_data: z.record(z.any()).optional(),
+  lunar_phase: lunarDataSchema.optional(),
+  weather_data: weatherSchema.optional(),
 });
 
 export const updateFishingReportSchema = fishingReportSchema.partial();

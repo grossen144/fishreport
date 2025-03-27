@@ -1,4 +1,4 @@
-import { Knex } from "knex";
+import { Pool } from "pg";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
@@ -16,109 +16,117 @@ const loginSchema = z.object({
 });
 
 export class UserService {
-  constructor(private knex: Knex) {}
+  constructor(private pool: Pool) {}
 
   async verifyPassword(user: any, password: string): Promise<boolean> {
     return bcrypt.compare(password, user.password);
   }
 
   async createUser(userData: z.infer<typeof userSchema>) {
-    const validatedData = userSchema.parse(userData);
-    const hashedPassword = await bcrypt.hash(validatedData.password, 10);
-
-    const [user] = await this.knex("users")
-      .insert({
-        name: validatedData.name,
-        email: validatedData.email,
-        password: hashedPassword,
-      })
-      .returning(["id", "name", "email", "created_at"]);
-
-    return user;
+    const hashedPassword = await bcrypt.hash(userData.password, 10);
+    const query = `
+      INSERT INTO users (name, email, password)
+      VALUES ($1, $2, $3)
+      RETURNING id, name, email
+    `;
+    const result = await this.pool.query(query, [
+      userData.name,
+      userData.email,
+      hashedPassword,
+    ]);
+    return result.rows[0];
   }
 
   async login(credentials: z.infer<typeof loginSchema>) {
-    const validatedData = loginSchema.parse(credentials);
+    const query = `
+      SELECT id, name, email, password
+      FROM users
+      WHERE email = $1
+      LIMIT 1
+    `;
+    const result = await this.pool.query(query, [credentials.email]);
+    const user = result.rows[0];
 
-    const [user] = await this.knex("users")
-      .where({ email: validatedData.email })
-      .select("*");
-
-    if (!user) {
-      throw new Error("Invalid email or password");
-    }
-
-    const isValidPassword = await bcrypt.compare(
-      validatedData.password,
-      user.password
-    );
-
-    if (!isValidPassword) {
+    if (!user || !(await this.verifyPassword(user, credentials.password))) {
       throw new Error("Invalid email or password");
     }
 
     const token = jwt.sign(
-      { userId: user.id, email: user.email },
-      process.env.JWT_SECRET || "your_secret_key_here",
+      { userId: user.id, email: user.email, name: user.name },
+      process.env.JWT_SECRET || "your-secret-key",
       { expiresIn: "24h" }
     );
 
-    return {
-      token,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-      },
-    };
+    return { token, user: { id: user.id, name: user.name, email: user.email } };
   }
 
   async getUserById(id: number) {
-    const [user] = await this.knex("users")
-      .where({ id })
-      .select(["id", "name", "email", "created_at"]);
-
-    if (!user) {
-      throw new Error("User not found");
-    }
-
-    return user;
+    const query = `
+      SELECT id, name, email
+      FROM users
+      WHERE id = $1
+      LIMIT 1
+    `;
+    const result = await this.pool.query(query, [id]);
+    return result.rows[0];
   }
 
   async updateUser(id: number, userData: Partial<z.infer<typeof userSchema>>) {
-    const validatedData = userSchema.partial().parse(userData);
+    const updates: string[] = [];
+    const values: any[] = [];
+    let paramCount = 1;
 
-    if (validatedData.password) {
-      validatedData.password = await bcrypt.hash(validatedData.password, 10);
+    if (userData.name) {
+      updates.push(`name = $${paramCount}`);
+      values.push(userData.name);
+      paramCount++;
     }
 
-    const [user] = await this.knex("users")
-      .where({ id })
-      .update(validatedData)
-      .returning(["id", "name", "email", "created_at"]);
-
-    if (!user) {
-      throw new Error("User not found");
+    if (userData.email) {
+      updates.push(`email = $${paramCount}`);
+      values.push(userData.email);
+      paramCount++;
     }
 
-    return user;
+    if (userData.password) {
+      updates.push(`password = $${paramCount}`);
+      values.push(await bcrypt.hash(userData.password, 10));
+      paramCount++;
+    }
+
+    if (updates.length === 0) {
+      return this.getUserById(id);
+    }
+
+    values.push(id);
+    const query = `
+      UPDATE users
+      SET ${updates.join(", ")}, updated_at = NOW()
+      WHERE id = $${paramCount}
+      RETURNING id, name, email
+    `;
+    const result = await this.pool.query(query, values);
+    return result.rows[0];
   }
 
   async deleteUser(id: number) {
-    const [user] = await this.knex("users")
-      .where({ id })
-      .del()
-      .returning(["id", "name", "email"]);
-
-    if (!user) {
-      throw new Error("User not found");
-    }
-
-    return user;
+    const query = `
+      DELETE FROM users
+      WHERE id = $1
+      RETURNING id
+    `;
+    const result = await this.pool.query(query, [id]);
+    return result.rows[0];
   }
 
   async getUserByEmail(email: string) {
-    const [user] = await this.knex("users").where({ email }).select("*");
-    return user;
+    const query = `
+      SELECT id, name, email, password
+      FROM users
+      WHERE email = $1
+      LIMIT 1
+    `;
+    const result = await this.pool.query(query, [email]);
+    return result.rows[0];
   }
 }

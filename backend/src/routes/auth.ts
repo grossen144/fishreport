@@ -1,18 +1,18 @@
 import { Router } from "express";
 import { UserService } from "../services/user.service";
-import { db } from "../services/db.service";
+import { pool } from "../services/db.service";
 import jwt from "jsonwebtoken";
 import { authenticateToken } from "../middleware/auth";
 
 const router = Router();
-const userService = new UserService(db);
+const userService = new UserService(pool);
 
 // Register new user
 router.post("/register", async (req, res) => {
   try {
     const user = await userService.createUser(req.body);
     const token = jwt.sign(
-      { id: user.id, email: user.email, name: user.name },
+      { userId: user.id, email: user.email, name: user.name },
       process.env.JWT_SECRET || "your-secret-key",
       { expiresIn: "24h" }
     );

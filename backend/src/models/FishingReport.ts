@@ -7,6 +7,7 @@ import {
   UpdateDateColumn,
 } from "typeorm";
 import { User } from "./User";
+import { LunarData } from "@fishreport/shared/types/weather";
 
 export enum FishSpecies {
   PERCH = "perch",
@@ -76,8 +77,8 @@ export class FishingReport {
   @Column({ nullable: true })
   weather_condition?: string;
 
-  @Column({ nullable: true })
-  lunar_phase?: string;
+  @Column("jsonb", { nullable: true })
+  lunar_phase?: LunarData;
 
   @Column("jsonb", { nullable: true })
   weather_data?: Record<string, any>;

@@ -25,7 +25,6 @@ export const weatherSchema = z.object({
   clouds: z.object({
     all: z.number(),
   }),
-  dt: z.number(),
   sys: z.object({
     country: z.string(),
     sunrise: z.number(),

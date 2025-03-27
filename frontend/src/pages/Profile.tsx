@@ -1,8 +1,10 @@
 import React from "react";
 import { useAuth } from "../contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const Profile: React.FC = () => {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   const containerStyle = {
     maxWidth: "800px",
@@ -77,7 +79,13 @@ const Profile: React.FC = () => {
         </div>
 
         <div style={buttonContainerStyle}>
-          <button style={buttonStyle} onClick={logout}>
+          <button
+            style={buttonStyle}
+            onClick={() => {
+              logout();
+              navigate("/");
+            }}
+          >
             Logout
           </button>
         </div>

@@ -1,4 +1,4 @@
-import { Knex } from "knex";
+import { Pool } from "pg";
 import {
   CreateFishingReportInput,
   UpdateFishingReportInput,
@@ -32,52 +32,96 @@ export interface FishingReport {
 }
 
 export class FishingReportModel {
-  constructor(private knex: Knex) {}
+  constructor(private pool: Pool) {}
 
   async create(
     userId: number,
     data: CreateFishingReportInput
   ): Promise<FishingReport> {
-    const [report] = await this.knex("fishing_reports")
-      .insert({
-        user_id: userId,
-        ...data,
-      })
-      .returning("*");
-    return report;
+    const query = `
+      INSERT INTO fishing_reports (
+        user_id, species, date, location, hours_fished,
+        number_of_persons, number_of_fish, fish_over_40cm,
+        bonus_pike, bonus_zander, water_temperature,
+        bag_total, comment, latitude, longitude,
+        weather_data, lunar_phase
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+      RETURNING *
+    `;
+    const values = [
+      userId,
+      data.species,
+      data.date,
+      data.location,
+      data.hours_fished,
+      data.number_of_persons,
+      data.number_of_fish,
+      data.fish_over_40cm,
+      data.bonus_pike,
+      data.bonus_zander,
+      data.water_temperature,
+      data.bag_total,
+      data.comment,
+      data.latitude,
+      data.longitude,
+      data.weather_data,
+      data.lunar_phase,
+    ];
+    const result = await this.pool.query(query, values);
+    return result.rows[0];
   }
 
   async findById(id: number): Promise<FishingReport | null> {
-    const [report] = await this.knex("fishing_reports")
-      .where({ id })
-      .select("*");
-    return report || null;
+    const query = `
+      SELECT *
+      FROM fishing_reports
+      WHERE id = $1
+      LIMIT 1
+    `;
+    const result = await this.pool.query(query, [id]);
+    return result.rows[0] || null;
   }
 
   async findByUserId(userId: number): Promise<FishingReport[]> {
-    return this.knex("fishing_reports")
-      .where({ user_id: userId })
-      .orderBy("date", "desc")
-      .select("*");
+    const query = `
+      SELECT *
+      FROM fishing_reports
+      WHERE user_id = $1
+      ORDER BY date DESC
+    `;
+    const result = await this.pool.query(query, [userId]);
+    return result.rows;
   }
 
   async update(
     id: number,
     data: UpdateFishingReportInput
   ): Promise<FishingReport | null> {
-    const [report] = await this.knex("fishing_reports")
-      .where({ id })
-      .update({
-        ...data,
-        updated_at: this.knex.fn.now(),
-      })
-      .returning("*");
-    return report || null;
+    const keys = Object.keys(data);
+    const setClause = keys
+      .map((key, index) => `${key} = $${index + 1}`)
+      .join(", ");
+
+    const query = `
+      UPDATE fishing_reports
+      SET ${setClause}, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $${keys.length + 1}
+      RETURNING *
+    `;
+    const values = [...Object.values(data), id];
+    const result = await this.pool.query(query, values);
+    return result.rows[0] || null;
   }
 
   async delete(id: number): Promise<boolean> {
-    const count = await this.knex("fishing_reports").where({ id }).delete();
-    return count > 0;
+    const query = `
+      DELETE FROM fishing_reports
+      WHERE id = $1
+      RETURNING id
+    `;
+    const result = await this.pool.query(query, [id]);
+    return result.rows.length > 0;
   }
 
   async getStats(userId: number) {

@@ -59,6 +59,7 @@ const ReportForm: React.FC = () => {
       const response = await axios.get<LunarData>(
         `http://localhost:3003/api/weather/lunar?date=${date}`
       );
+      console.log("Lunar data:", response.data);
       setLunarData(response.data);
     } catch (error) {
       setError("Error fetching lunar data");
@@ -103,22 +104,8 @@ const ReportForm: React.FC = () => {
         water_temperature: parseFloat(waterTemperature) || null,
         bag_total: parseFloat(bagTotal) || null,
         comment: comment || null,
-        weather_data: weatherData
-          ? {
-              temperature: weatherData.main.temp,
-              wind_speed: weatherData.wind.speed,
-              wind_direction: getWindDirection(weatherData.wind.deg || 0),
-              weather_condition: weatherData.weather[0].description,
-              pressure: weatherData.main.pressure,
-            }
-          : null,
-        lunar_phase: lunarData
-          ? {
-              phase: lunarData[0]?.Moon[0],
-              illumination: lunarData[0]?.Illumination,
-              age: lunarData[0]?.Age,
-            }
-          : null,
+        weather_data: weatherData || null,
+        lunar_phase: lunarData || null,
       };
 
       await axios.post("http://localhost:3003/api/reports", reportData, {
@@ -143,9 +130,22 @@ const ReportForm: React.FC = () => {
       setBagTotal("");
       setComment("");
       setWeatherData(null);
+      setLunarData(null);
       setError("");
     } catch (error) {
-      setError("Error submitting report");
+      if (axios.isAxiosError(error) && error.response?.data?.error) {
+        // Handle Zod validation errors
+        if (error.response.data.error.errors) {
+          const validationErrors = error.response.data.error.errors.map(
+            (err: any) => `${err.path.join(".")}: ${err.message}`
+          );
+          setError(validationErrors.join("\n"));
+        } else {
+          setError(error.response.data.error);
+        }
+      } else {
+        setError("Error submitting report");
+      }
     }
   };
 
