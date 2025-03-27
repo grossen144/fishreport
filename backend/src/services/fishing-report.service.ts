@@ -3,36 +3,7 @@ import {
   CreateFishingReportInput,
   UpdateFishingReportInput,
 } from "../schemas/fishing-report.schema";
-import { z } from "zod";
-import {
-  lunarDataSchema,
-  weatherSchema,
-} from "@fishreport/shared/types/weather";
-
-export const FishingReportSchema = z.object({
-  id: z.number(),
-  user_id: z.number(),
-  species: z.string(),
-  date: z.date(),
-  location: z.string(),
-  hours_fished: z.number(),
-  number_of_persons: z.number(),
-  number_of_fish: z.number(),
-  fish_over_40cm: z.number().optional(),
-  bonus_pike: z.number().optional(),
-  bonus_zander: z.number().optional(),
-  latitude: z.number().optional(),
-  longitude: z.number().optional(),
-  water_temperature: z.number().optional(),
-  bag_total: z.number().optional(),
-  comment: z.string().optional(),
-  weather_data: weatherSchema.optional(),
-  lunar_phase: lunarDataSchema.optional(),
-  created_at: z.date(),
-  updated_at: z.date(),
-});
-
-export type FishingReport = z.infer<typeof FishingReportSchema>;
+import { FishingReport } from "src/models/fishing-report.model";
 
 export class FishingReportService {
   constructor(private pool: Pool) {}
@@ -43,13 +14,13 @@ export class FishingReportService {
   ): Promise<FishingReport> {
     const query = `
       INSERT INTO fishing_reports (
-        user_id, species, date, location, hours_fished,
+        user_id, species, date, hours_fished,
         number_of_persons, number_of_fish, fish_over_40cm,
         bonus_pike, bonus_zander, water_temperature,
         bag_total, comment, latitude, longitude,
         weather_data, lunar_phase
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
       RETURNING *
     `;
 
@@ -57,7 +28,6 @@ export class FishingReportService {
       userId,
       data.species,
       data.date,
-      data.location,
       data.hours_fished,
       data.number_of_persons,
       data.number_of_fish,

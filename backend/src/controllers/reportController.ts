@@ -3,6 +3,7 @@ import { FishingReportService } from "../services/fishing-report.service";
 import { pool } from "../services/db.service";
 import { weatherSchema } from "@fishreport/shared/types/weather";
 import { ZodError } from "zod";
+import { fishingReportSchema } from "../schemas/fishing-report.schema";
 
 declare global {
   namespace Express {
@@ -30,7 +31,11 @@ export class ReportController {
         return res.status(401).json({ error: "Unauthorized" });
       }
 
-      const report = await this.fishingReportService.create(userId, req.body);
+      const validatedReport = fishingReportSchema.parse(req.body);
+      const report = await this.fishingReportService.create(
+        userId,
+        validatedReport
+      );
       return res.status(201).json(report);
     } catch (error) {
       if (error instanceof ZodError) {

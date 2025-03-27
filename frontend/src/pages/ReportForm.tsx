@@ -172,7 +172,12 @@ const ReportForm: React.FC = () => {
           );
           setError(validationErrors.join("\n"));
         } else {
-          setError(error.response.data.error);
+          // If it's a string, use it directly, otherwise convert to string
+          setError(
+            typeof error.response.data.error === "string"
+              ? error.response.data.error
+              : JSON.stringify(error.response.data.error)
+          );
         }
       } else {
         setError("Error submitting report");
@@ -463,7 +468,7 @@ const ReportForm: React.FC = () => {
 
           <div>
             <label style={labelStyle}>
-              Number of Fish
+              Number of {species} caught
               <input
                 type="number"
                 style={inputStyle}
@@ -478,7 +483,7 @@ const ReportForm: React.FC = () => {
             <>
               <div>
                 <label style={labelStyle}>
-                  Fish over 40cm
+                  Perch over 40 cm
                   <input
                     type="number"
                     style={inputStyle}
@@ -522,7 +527,6 @@ const ReportForm: React.FC = () => {
                 style={inputStyle}
                 value={waterTemperature}
                 onChange={(e) => setWaterTemperature(e.target.value)}
-                required
               />
             </label>
           </div>
@@ -535,7 +539,6 @@ const ReportForm: React.FC = () => {
                 style={inputStyle}
                 value={bagTotal}
                 onChange={(e) => setBagTotal(e.target.value)}
-                required
               />
             </label>
           </div>

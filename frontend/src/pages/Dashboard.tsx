@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useAuth } from "../contexts/AuthContext";
-import { FishingReport } from "../types/fishing";
 
 interface DashboardStats {
   totalReports: number;
