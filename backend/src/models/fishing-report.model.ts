@@ -39,8 +39,8 @@ export class FishingReportModel {
     data: CreateFishingReportInput
   ): Promise<FishingReport> {
     const query = `
-      INSERT INTO fishing_reports (
-        user_id, species, date, location, hours_fished,
+      INSERT INTO fishing_trips (
+        user_id, species, date, location, hours_fishing,
         number_of_persons, number_of_fish, fish_over_40cm,
         bonus_pike, bonus_zander, water_temperature,
         bag_total, comment, latitude, longitude,
@@ -75,7 +75,7 @@ export class FishingReportModel {
   async findById(id: number): Promise<FishingReport | null> {
     const query = `
       SELECT *
-      FROM fishing_reports
+      FROM fishing_trips
       WHERE id = $1
       LIMIT 1
     `;
@@ -86,7 +86,7 @@ export class FishingReportModel {
   async findByUserId(userId: number): Promise<FishingReport[]> {
     const query = `
       SELECT *
-      FROM fishing_reports
+      FROM fishing_trips
       WHERE user_id = $1
       ORDER BY date DESC
     `;
@@ -104,7 +104,7 @@ export class FishingReportModel {
       .join(", ");
 
     const query = `
-      UPDATE fishing_reports
+      UPDATE fishing_trips
       SET ${setClause}, updated_at = CURRENT_TIMESTAMP
       WHERE id = $${keys.length + 1}
       RETURNING *
@@ -116,7 +116,7 @@ export class FishingReportModel {
 
   async delete(id: number): Promise<boolean> {
     const query = `
-      DELETE FROM fishing_reports
+      DELETE FROM fishing_trips
       WHERE id = $1
       RETURNING id
     `;

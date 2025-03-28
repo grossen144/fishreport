@@ -9,10 +9,11 @@ async function resetDatabase() {
     // Drop all tables
     await pool.query(`
       DROP TABLE IF EXISTS migrations CASCADE;
-      DROP TABLE IF EXISTS fishing_reports CASCADE;
       DROP TABLE IF EXISTS users CASCADE;
-      DROP TABLE IF EXISTS catches CASCADE;
       DROP TABLE IF EXISTS fishing_trips CASCADE;
+      DROP TABLE IF EXISTS trip_catches CASCADE;
+      DROP TABLE IF EXISTS fishing_trip_buddies CASCADE;
+      DROP TABLE IF EXISTS fishing_buddies CASCADE;
     `);
 
     console.log("Database reset completed successfully");

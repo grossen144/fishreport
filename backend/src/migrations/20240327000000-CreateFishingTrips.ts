@@ -10,7 +10,7 @@ exports.up = async function (pool: Pool) {
       water_temperature DECIMAL(4,1),
       hours_fishing DECIMAL(4,1),
       number_of_persons INTEGER,
-      total_fish INTEGER,
+      number_of_fish INTEGER,
       bag_total DECIMAL(6,2),
       bonus_zander INTEGER,
       fish_over_40 INTEGER,
@@ -24,7 +24,7 @@ exports.up = async function (pool: Pool) {
   `);
 
   await pool.query(`
-    CREATE TABLE catches (
+    CREATE TABLE trip_catches (
       id SERIAL PRIMARY KEY,
       trip_id INTEGER NOT NULL REFERENCES fishing_trips(id) ON DELETE CASCADE,
       species VARCHAR(255) NOT NULL,
@@ -40,6 +40,6 @@ exports.up = async function (pool: Pool) {
 };
 
 exports.down = async function (pool: Pool) {
-  await pool.query(`DROP TABLE IF EXISTS catches;`);
+  await pool.query(`DROP TABLE IF EXISTS trip_catches;`);
   await pool.query(`DROP TABLE IF EXISTS fishing_trips;`);
 };
