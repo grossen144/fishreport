@@ -5,6 +5,7 @@ exports.up = async function (pool: Pool) {
     CREATE TABLE fishing_trips (
       id SERIAL PRIMARY KEY,
       user_id INTEGER NOT NULL REFERENCES users(id),
+      target_species VARCHAR(255) NOT NULL DEFAULT 'perch',
       location text,
       latitude DECIMAL(10,8),
       longitude DECIMAL(11,8),
@@ -21,7 +22,7 @@ exports.up = async function (pool: Pool) {
       comment TEXT,
       weather_data JSONB,
       lunar_data JSONB,
-      target_species VARCHAR(255) NOT NULL DEFAULT 'perch',
+      status VARCHAR(20) NOT NULL DEFAULT 'active',
       created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
     );

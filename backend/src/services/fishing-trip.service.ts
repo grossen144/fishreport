@@ -1,16 +1,45 @@
 import { Pool } from "pg";
 import {
-  CreateFishingTripInput,
+  AddTripBuddiesInput,
+  CompleteTripInput,
   FishingTrip,
-  UpdateFishingTripInput,
+  StartTripInput,
 } from "../schemas/fishing-trip.schema";
 
 export class FishingTripService {
   constructor(private pool: Pool) {}
 
-  async create_trip(
+  async startTrip(userId: number, data: StartTripInput): Promise<FishingTrip> {
+    const query = `
+      INSERT INTO fishing_trips (
+        user_id, target_species, date, location, 
+        number_of_persons,  lunar_data, weather_data,
+        latitude, longitude, status
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      RETURNING *
+    `;
+
+    const values = [
+      userId,
+      data.target_species,
+      data.date,
+      data.location,
+      data.number_of_persons,
+      JSON.stringify(data.weather_data),
+      JSON.stringify(data.lunar_data),
+      data.latitude,
+      data.longitude,
+      "active",
+    ];
+
+    const result = await this.pool.query(query, values);
+    return result.rows[0];
+  }
+
+  async createTrip(
     userId: number,
-    data: CreateFishingTripInput
+    data: CompleteTripInput
   ): Promise<FishingTrip> {
     const query = `
       INSERT INTO fishing_trips (
@@ -74,7 +103,7 @@ export class FishingTripService {
 
   async update(
     id: number,
-    data: UpdateFishingTripInput
+    data: CompleteTripInput
   ): Promise<FishingTrip | null> {
     const keys = Object.keys(data);
     const setClause = keys
@@ -180,5 +209,17 @@ export class FishingTripService {
       bestLocation: stats.best_location,
       recentReports: stats.recent_reports,
     };
+  }
+
+  async addFishingTripBuddies(data: AddTripBuddiesInput) {
+    const query = `
+      INSERT INTO fishing_trip_buddies (fishing_trip_id, buddy_id)
+      VALUES ($1, $2)
+      ON CONFLICT (fishing_trip_id, buddy_id) DO NOTHING
+    `;
+
+    for (const buddyId of data.buddyIds) {
+      await this.pool.query(query, [data.fishingTripId, buddyId]);
+    }
   }
 }

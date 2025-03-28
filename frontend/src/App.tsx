@@ -15,6 +15,8 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import ReportForm from "./pages/ReportForm";
 import Profile from "./pages/Profile";
+import { StartTripForm } from "./pages/StartTripForm";
+import { ActiveTrip } from "./pages/ActiveTrip";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 
 const theme = createTheme({
@@ -52,6 +54,22 @@ function App() {
                   element={
                     <PrivateRoute>
                       <Dashboard />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/start-trip"
+                  element={
+                    <PrivateRoute>
+                      <StartTripForm />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/active-trips"
+                  element={
+                    <PrivateRoute>
+                      <ActiveTrip />
                     </PrivateRoute>
                   }
                 />

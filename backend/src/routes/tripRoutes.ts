@@ -9,7 +9,8 @@ const tripController = new TripsController();
 router.use(authenticateToken);
 
 // Create a new report
-router.post("/", tripController.createTrip);
+router.post("/start", tripController.startTrip);
+router.post("/complete", tripController.completeTrip);
 
 // Get all reports for the authenticated user
 router.get("/", tripController.getReports);
@@ -25,5 +26,8 @@ router.put("/:id", tripController.updateReport);
 
 // Delete a report
 router.delete("/:id", tripController.deleteReport);
+
+// Add this line with the other routes
+router.post("/:id/buddies", tripController.addFishingTripBuddies);
 
 export default router;

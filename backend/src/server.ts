@@ -18,7 +18,7 @@ app.use(express.json());
 
 // Routes
 app.use("/api/auth", authRoutes);
-app.use("/api/reports", reportRoutes);
+app.use("/api/trips", reportRoutes);
 app.use("/api/weather", weatherRoutes);
 app.use("/api/users", userRoutes);
 

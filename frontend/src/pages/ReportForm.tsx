@@ -103,7 +103,6 @@ const ReportForm: React.FC = () => {
       const response = await axios.get<LunarData>(
         `http://localhost:3003/api/weather/lunar?date=${date}`
       );
-      console.log("Lunar data:", response.data);
       setLunarData(response.data);
     } catch (error) {
       setError("Error fetching lunar data");

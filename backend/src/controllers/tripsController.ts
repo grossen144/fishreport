@@ -2,7 +2,11 @@ import { Request, Response } from "express";
 import { pool } from "../services/db.service";
 import { weatherSchema } from "@fishreport/shared/types/weather";
 import { ZodError } from "zod";
-import { fishingTripSchema } from "../schemas/fishing-trip.schema";
+import {
+  addTripBuddiesSchema,
+  completeTripSchema,
+  startTripSchema,
+} from "../schemas/fishing-trip.schema";
 import { FishingTripService } from "../services/fishing-trip.service";
 
 declare global {
@@ -24,15 +28,39 @@ export class TripsController {
     this.fishingTripService = new FishingTripService(pool);
   }
 
-  createTrip = async (req: Request, res: Response) => {
+  startTrip = async (req: Request, res: Response) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
         return res.status(401).json({ error: "Unauthorized" });
       }
 
-      const validatedTrip = fishingTripSchema.parse(req.body);
-      const trip = await this.fishingTripService.create_trip(
+      const validatedTrip = startTripSchema.parse(req.body);
+      const trip = await this.fishingTripService.startTrip(
+        userId,
+        validatedTrip
+      );
+      return res.status(201).json(trip);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      if (error instanceof Error) {
+        return res.status(400).json({ error: error.message });
+      }
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  };
+
+  completeTrip = async (req: Request, res: Response) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const validatedTrip = completeTripSchema.parse(req.body);
+      const trip = await this.fishingTripService.createTrip(
         userId,
         validatedTrip
       );
@@ -222,6 +250,49 @@ export class TripsController {
       );
       const data = await response.json();
       return res.json(data);
+    } catch (error) {
+      if (error instanceof Error) {
+        return res.status(400).json({ error: error.message });
+      }
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  };
+
+  addFishingTripBuddies = async (req: Request, res: Response) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const tripId = parseInt(req.params.id);
+      if (isNaN(tripId)) {
+        return res.status(400).json({ error: "Invalid trip ID" });
+      }
+
+      const trip = await this.fishingTripService.findById(tripId);
+      if (!trip) {
+        return res.status(404).json({ error: "Trip not found" });
+      }
+
+      if (Number(trip.user_id) !== userId) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
+      const { buddyIds } = req.body;
+      if (!Array.isArray(buddyIds)) {
+        return res.status(400).json({ error: "buddyIds must be an array" });
+      }
+
+      const validatedFishingTripBuddies = addTripBuddiesSchema.parse({
+        fishingTripId: tripId,
+        buddyIds,
+      });
+
+      await this.fishingTripService.addFishingTripBuddies(
+        validatedFishingTripBuddies
+      );
+      return res.status(201).json({ message: "Buddies added successfully" });
     } catch (error) {
       if (error instanceof Error) {
         return res.status(400).json({ error: error.message });

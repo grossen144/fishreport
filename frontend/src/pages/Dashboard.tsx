@@ -26,7 +26,7 @@ const Dashboard: React.FC = () => {
     const fetchStats = async () => {
       try {
         const response = await axios.get<DashboardStats>(
-          "http://localhost:3003/api/reports/stats",
+          "http://localhost:3003/api/trips/stats",
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`,
