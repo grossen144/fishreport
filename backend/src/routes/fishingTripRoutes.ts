@@ -34,4 +34,10 @@ router.delete("/:id", tripController.deleteFishingTrip);
 // Add this line with the other routes
 router.post("/:id/buddies", tripController.addFishingTripBuddies);
 
+// Add catch to a trip
+router.post("/:id/catches", tripController.addCatch);
+
+// Get catches for a trip
+router.get("/:id/catches", tripController.getCatches);
+
 export default router;

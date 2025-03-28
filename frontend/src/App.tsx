@@ -13,7 +13,6 @@ import Layout from "./components/Layout";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
-import ReportForm from "./pages/ReportForm";
 import Profile from "./pages/Profile";
 import { StartTripForm } from "./pages/StartFishingTripForm";
 import { ActiveTrip } from "./pages/ActiveFishingTrip";
@@ -73,14 +72,14 @@ function App() {
                     </PrivateRoute>
                   }
                 />
-                <Route
+                {/* <Route
                   path="/report"
                   element={
                     <PrivateRoute>
                       <ReportForm />
                     </PrivateRoute>
                   }
-                />
+                /> */}
                 <Route path="/profile" element={<Profile />} />
               </Routes>
             </Layout>

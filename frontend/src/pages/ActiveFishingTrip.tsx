@@ -13,8 +13,11 @@ import {
   ToggleButton,
   Slider,
   Chip,
+  FormControlLabel,
+  Switch,
 } from "@mui/material";
 import { Add as AddIcon, Remove as RemoveIcon } from "@mui/icons-material";
+import { TimeField } from "@mui/x-date-pickers";
 import axios from "axios";
 import { useParams } from "react-router-dom";
 
@@ -68,6 +71,18 @@ export const ActiveTrip: React.FC = () => {
   const [selectedBuddies, setSelectedBuddies] = useState<
     Array<{ id: number; name: string }>
   >([]);
+  const [useCurrentLocation, setUseCurrentLocation] = useState(false);
+  const [gpsPosition, setLocationGpsPosition] = useState({
+    latitude: 0,
+    longitude: 0,
+  });
+  const [newCatch, setNewCatch] = useState({
+    species: "",
+    weight_grams: "",
+    length_cm: "",
+    depth_cm: "",
+    caught_at: new Date(),
+  });
 
   // Form state
   const [hoursFishing, setHoursFishing] = useState<string>("");
@@ -89,6 +104,23 @@ export const ActiveTrip: React.FC = () => {
   const capitalize = (str: string | undefined) => {
     if (!str) return "";
     return str.charAt(0).toUpperCase() + str.slice(1);
+  };
+
+  const fetchCatches = async () => {
+    try {
+      const response = await axios.get(
+        `http://localhost:3003/api/trips/${id}/catches`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+      setCatches(response.data);
+    } catch (error) {
+      console.error("Error fetching catches:", error);
+      setError("Error fetching catches");
+    }
   };
 
   useEffect(() => {
@@ -132,6 +164,7 @@ export const ActiveTrip: React.FC = () => {
           }
         );
         setTrip(response.data);
+        fetchCatches(); // Fetch catches after getting trip data
 
         // Convert decimal to whole number string for the toggle buttons
         const hoursValue = response.data.hours_fished
@@ -160,6 +193,22 @@ export const ActiveTrip: React.FC = () => {
 
     fetchTrip();
   }, [id]);
+
+  useEffect(() => {
+    if (useCurrentLocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setLocationGpsPosition({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          });
+        },
+        (error) => {
+          setError("Error getting location: " + error.message);
+        }
+      );
+    }
+  }, [useCurrentLocation]);
 
   // Auto-save function with debounce
   const autoSave = async (data: any) => {
@@ -222,6 +271,47 @@ export const ActiveTrip: React.FC = () => {
     }
   };
 
+  const handleAddCatch = async () => {
+    try {
+      const catchData = {
+        trip_id: id,
+        species: newCatch.species,
+        weight_grams: parseFloat(newCatch.weight_grams),
+        length_cm: newCatch.length_cm ? parseFloat(newCatch.length_cm) : null,
+        depth_cm: newCatch.depth_cm ? parseFloat(newCatch.depth_cm) : null,
+        latitude: useCurrentLocation ? gpsPosition.latitude : null,
+        longitude: useCurrentLocation ? gpsPosition.longitude : null,
+        caught_at: newCatch.caught_at.toISOString(),
+      };
+
+      await axios.post(
+        `http://localhost:3003/api/trips/${id}/catches`,
+        catchData,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      // Reset form and close dialog
+      setNewCatch({
+        species: "",
+        weight_grams: "",
+        length_cm: "",
+        depth_cm: "",
+        caught_at: new Date(),
+      });
+      setUseCurrentLocation(false);
+      setShowAddCatch(false);
+
+      // Refresh catches list
+      fetchCatches();
+    } catch (error) {
+      setError("Error adding catch");
+    }
+  };
+
   const allRequiredFieldsFilled =
     trip && hoursFishing && waterTemperature && numberOfFish;
 
@@ -229,18 +319,61 @@ export const ActiveTrip: React.FC = () => {
     <Container maxWidth="sm">
       {/* Catches List */}
       <Paper sx={{ p: 2, mb: 2 }}>
-        <Typography variant="h6" gutterBottom>
-          Catches
-        </Typography>
-        <Stack spacing={2}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 1,
+          }}
+        >
+          <Typography variant="h6">Catches</Typography>
+          <Typography variant="body2" color="text.secondary">
+            {catches.length} {catches.length === 1 ? "catch" : "catches"}
+          </Typography>
+        </Box>
+        <Stack spacing={0.5}>
           {catches.map((catch_) => (
-            <Paper key={catch_.id} sx={{ p: 2 }}>
-              <Typography>{catch_.species}</Typography>
-              <Typography variant="body2">
-                {catch_.weight_grams}g • {catch_.length_cm}cm
+            <Box
+              key={catch_.id}
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                py: 0.5,
+                borderBottom: "1px solid",
+                borderColor: "divider",
+                "&:last-child": {
+                  borderBottom: "none",
+                },
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    textTransform: "capitalize",
+                    fontWeight: "medium",
+                    minWidth: 60,
+                  }}
+                >
+                  {catch_.species}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {Math.round(catch_.weight_grams)} gr /{" "}
+                  {Math.round(catch_.length_cm)} cm
+                </Typography>
+              </Box>
+              <Typography variant="caption" color="text.secondary">
+                {new Date(catch_.caught_at).toLocaleTimeString()}
               </Typography>
-            </Paper>
+            </Box>
           ))}
+          {catches.length === 0 && (
+            <Typography color="text.secondary" align="center" sx={{ py: 1 }}>
+              No catches yet. Add your first catch!
+            </Typography>
+          )}
         </Stack>
       </Paper>
 
@@ -497,7 +630,148 @@ export const ActiveTrip: React.FC = () => {
         open={showAddCatch}
         onClose={() => setShowAddCatch(false)}
       >
-        {/* Add catch form */}
+        <Box sx={{ p: 2 }}>
+          <Typography variant="h6" gutterBottom>
+            Add New Catch
+          </Typography>
+          <Stack spacing={3}>
+            {/* Species Selection */}
+            <Box>
+              <Typography gutterBottom>Species</Typography>
+              <ToggleButtonGroup
+                exclusive
+                fullWidth
+                value={newCatch.species}
+                onChange={(_, value) => {
+                  if (value) {
+                    setNewCatch((prev) => ({ ...prev, species: value }));
+                  }
+                }}
+              >
+                <ToggleButton value="perch">Perch</ToggleButton>
+                <ToggleButton value="pike">Pike</ToggleButton>
+                <ToggleButton value="zander">Zander</ToggleButton>
+              </ToggleButtonGroup>
+            </Box>
+
+            {/* Weight and Length */}
+            <Box>
+              <Typography gutterBottom>Weight (g)</Typography>
+              <input
+                type="number"
+                value={newCatch.weight_grams}
+                onChange={(e) =>
+                  setNewCatch((prev) => ({
+                    ...prev,
+                    weight_grams: e.target.value,
+                  }))
+                }
+                style={{
+                  width: "100%",
+                  padding: "8px 12px",
+                  borderRadius: "4px",
+                  border: "1px solid #ddd",
+                  fontSize: "16px",
+                }}
+                placeholder="Enter weight in grams"
+              />
+            </Box>
+
+            <Box>
+              <Typography gutterBottom>Length (cm)</Typography>
+              <input
+                type="number"
+                value={newCatch.length_cm}
+                onChange={(e) =>
+                  setNewCatch((prev) => ({
+                    ...prev,
+                    length_cm: e.target.value,
+                  }))
+                }
+                style={{
+                  width: "100%",
+                  padding: "8px 12px",
+                  borderRadius: "4px",
+                  border: "1px solid #ddd",
+                  fontSize: "16px",
+                }}
+                placeholder="Enter length in centimeters"
+              />
+            </Box>
+
+            {/* Location Toggle */}
+            <Box>
+              <Typography gutterBottom>Location</Typography>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={useCurrentLocation}
+                    onChange={(e) => setUseCurrentLocation(e.target.checked)}
+                    color="primary"
+                  />
+                }
+                label="Use current location"
+                sx={{
+                  width: "100%",
+                  margin: 0,
+                  padding: "8px 16px",
+                  backgroundColor: "background.paper",
+                  borderRadius: 1,
+                  "&:hover": {
+                    backgroundColor: "action.hover",
+                  },
+                }}
+              />
+            </Box>
+
+            {/* Time of Catch */}
+            <Box>
+              <Typography gutterBottom>Time of Catch</Typography>
+              <TimeField
+                value={newCatch.caught_at}
+                onChange={(newValue) => {
+                  if (newValue) {
+                    // Keep the trip's date but update the time
+                    const tripDate = new Date(trip.date);
+                    const newDate = new Date(newValue);
+                    tripDate.setHours(newDate.getHours());
+                    tripDate.setMinutes(newDate.getMinutes());
+                    setNewCatch((prev) => ({
+                      ...prev,
+                      caught_at: tripDate,
+                    }));
+                  }
+                }}
+                format="HH:mm"
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                    placeholder: "Select time",
+                  },
+                }}
+              />
+            </Box>
+
+            {/* Action Buttons */}
+            <Stack direction="row" spacing={2}>
+              <Button
+                variant="outlined"
+                fullWidth
+                onClick={() => setShowAddCatch(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="contained"
+                fullWidth
+                onClick={handleAddCatch}
+                disabled={!newCatch.species || !newCatch.weight_grams}
+              >
+                Add Catch
+              </Button>
+            </Stack>
+          </Stack>
+        </Box>
       </Dialog>
 
       {error && (

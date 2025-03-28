@@ -321,4 +321,76 @@ export class TripsController {
       return res.status(500).json({ error: "Internal server error" });
     }
   };
+
+  addCatch = async (req: Request, res: Response) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const tripId = parseInt(req.params.id);
+      if (isNaN(tripId)) {
+        return res.status(400).json({ error: "Invalid trip ID" });
+      }
+
+      const trip = await this.fishingTripService.findById(tripId);
+      if (!trip) {
+        return res.status(404).json({ error: "Trip not found" });
+      }
+
+      if (Number(trip.user_id) !== userId) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
+      const catchData = {
+        trip_id: tripId,
+        species: req.body.species,
+        weight_grams: req.body.weight_grams,
+        length_cm: req.body.length_cm,
+        latitude: req.body.latitude,
+        longitude: req.body.longitude,
+        caught_at: req.body.caught_at,
+      };
+
+      const newCatch = await this.fishingTripService.addCatch(catchData);
+      return res.status(201).json(newCatch);
+    } catch (error) {
+      if (error instanceof Error) {
+        return res.status(400).json({ error: error.message });
+      }
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  };
+
+  getCatches = async (req: Request, res: Response) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const tripId = parseInt(req.params.id);
+      if (isNaN(tripId)) {
+        return res.status(400).json({ error: "Invalid trip ID" });
+      }
+
+      const trip = await this.fishingTripService.findById(tripId);
+      if (!trip) {
+        return res.status(404).json({ error: "Trip not found" });
+      }
+
+      if (Number(trip.user_id) !== userId) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
+      const catches = await this.fishingTripService.getCatches(tripId);
+      return res.json(catches);
+    } catch (error) {
+      if (error instanceof Error) {
+        return res.status(400).json({ error: error.message });
+      }
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  };
 }

@@ -58,6 +58,18 @@ export const addTripBuddiesSchema = z.object({
     .min(1, "At least one buddy must be selected"),
 });
 
+export const FishingTripCatchSchema = z.object({
+  id: z.number(),
+  species: z.string(),
+  depth_cm: z.number().nullable(),
+  weight_grams: z.number(),
+  length_cm: z.number().nullable(),
+  latitude: z.number(),
+  longitude: z.number(),
+  caught_at: z.string(),
+});
+
 export type StartTripInput = z.infer<typeof startTripSchema>;
 export type FishingTrip = z.infer<typeof completeTripSchema>;
 export type AddTripBuddiesInput = z.infer<typeof addTripBuddiesSchema>;
+export type FishingTripCatch = z.infer<typeof FishingTripCatchSchema>;

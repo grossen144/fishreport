@@ -2,6 +2,7 @@ import { Pool } from "pg";
 import {
   AddTripBuddiesInput,
   FishingTrip,
+  FishingTripCatch,
   StartTripInput,
 } from "../schemas/fishingTripSchema";
 
@@ -232,5 +233,58 @@ export class FishingTripService {
       [userId, "active"]
     );
     return result.rows[0] || null;
+  }
+
+  async addCatch(data: {
+    trip_id: number;
+    species: string;
+    weight_grams: number;
+    length_cm: number;
+    latitude: number | null;
+    longitude: number | null;
+    caught_at: string;
+  }) {
+    const query = `
+      INSERT INTO trip_catches (
+        trip_id, species, weight_grams, length_cm,
+        latitude, longitude, caught_at
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING *
+    `;
+
+    const values = [
+      data.trip_id,
+      data.species,
+      data.weight_grams,
+      data.length_cm,
+      data.latitude,
+      data.longitude,
+      data.caught_at,
+    ];
+
+    const result = await this.pool.query(query, values);
+    return result.rows[0];
+  }
+
+  async getCatches(tripId: number): Promise<FishingTripCatch[]> {
+    const query = `
+      SELECT 
+        id,
+        species,
+        weight_grams,
+        length_cm,
+        depth_cm,
+        latitude,
+        longitude,
+        caught_at,
+        created_at
+      FROM trip_catches
+      WHERE trip_id = $1
+      ORDER BY caught_at DESC
+    `;
+
+    const result = await this.pool.query(query, [tripId]);
+    return result.rows;
   }
 }
