@@ -115,12 +115,12 @@ export class FishingReportService {
             ELSE 0
           END as avg_fish_per_trip,
           (
-            SELECT species
+            SELECT target_species
             FROM (
-              SELECT species, COUNT(*) as count
+              SELECT target_species, COUNT(*) as count
               FROM fishing_trips
               WHERE user_id = $1
-              GROUP BY species
+              GROUP BY target_species
               ORDER BY count DESC
               LIMIT 1
             ) as species_count
