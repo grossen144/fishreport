@@ -18,6 +18,9 @@ router.get("/", tripController.getReports);
 // Get fishing statistics
 router.get("/stats", tripController.getStats);
 
+// Get active trip for the current user
+router.get("/active", tripController.getActiveTrip);
+
 // Get a specific report by ID
 router.get("/:id", tripController.getReportById);
 

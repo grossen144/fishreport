@@ -9,10 +9,16 @@ import {
   Dialog,
   Box,
   IconButton,
+  ToggleButtonGroup,
+  ToggleButton,
+  Slider,
+  Chip,
 } from "@mui/material";
 import { Add as AddIcon, Remove as RemoveIcon } from "@mui/icons-material";
 import axios from "axios";
 import { FishingTrip } from "@fishreport/shared/types/fishing-trip";
+import { useParams } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 
 interface NumberInputProps {
   label: string;
@@ -53,32 +59,118 @@ const NumberInput: React.FC<NumberInputProps> = ({
 };
 
 export const ActiveTrip: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
   const [trip, setTrip] = useState<FishingTrip | null>(null);
   const [catches, setCatches] = useState<any[]>([]);
   const [showAddCatch, setShowAddCatch] = useState(false);
+  const [error, setError] = useState<string>("");
+  const [availableBuddies, setAvailableBuddies] = useState<
+    Array<{ id: number; name: string }>
+  >([]);
+  const [selectedBuddies, setSelectedBuddies] = useState<
+    Array<{ id: number; name: string }>
+  >([]);
+
+  // Form state
+  const [hoursFishing, setHoursFishing] = useState("");
+  const [numberOfFish, setNumberOfFish] = useState("");
+  const [perchOver40cm, setPerchOver40cm] = useState("");
+  const [numberOfBonusPike, setNumberOfBonusPike] = useState("");
+  const [numberOfBonusZander, setNumberOfBonusZander] = useState("");
+  const [numberOfBonusPerch, setNumberOfBonusPerch] = useState("");
+  const [waterTemperature, setWaterTemperature] = useState("");
+  const [bagTotal, setBagTotal] = useState("");
+  const [comment, setComment] = useState("");
+
+  useEffect(() => {
+    const fetchTrip = async () => {
+      try {
+        const response = await axios.get(
+          `http://localhost:3003/api/trips/${id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+        setTrip(response.data);
+      } catch (error) {
+        setError("Error fetching trip details");
+      }
+    };
+
+    const fetchBuddies = async () => {
+      try {
+        const response = await axios.get("http://localhost:3003/api/users", {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
+        setAvailableBuddies(response.data);
+      } catch (error) {
+        console.error("Error fetching buddies:", error);
+      }
+    };
+
+    fetchTrip();
+    fetchBuddies();
+  }, [id]);
 
   // Auto-save function
   const autoSave = async (data: any) => {
     try {
-      await axios.patch(`/api/trips/${trip?.id}`, data);
+      await axios.patch(`http://localhost:3003/api/trips/${id}`, data, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
     } catch (error) {
       console.error("Error auto-saving:", error);
+      setError("Error saving changes");
+    }
+  };
+
+  const handleEndTrip = async () => {
+    try {
+      const tripData = {
+        hours_fished: parseFloat(hoursFishing) || 0,
+        number_of_fish: parseInt(numberOfFish) || 0,
+        perch_over_40: parseInt(perchOver40cm) || null,
+        number_of_bonus_pike: parseInt(numberOfBonusPike) || null,
+        number_of_bonus_zander: parseInt(numberOfBonusZander) || null,
+        number_of_bonus_perch: parseInt(numberOfBonusPerch) || null,
+        water_temperature: parseFloat(waterTemperature) || null,
+        bag_total: parseFloat(bagTotal) || null,
+        comment: comment || null,
+        status: "completed",
+      };
+
+      await axios.patch(`http://localhost:3003/api/trips/${id}`, tripData, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+
+      // Redirect to dashboard or show success message
+      window.location.href = "/dashboard";
+    } catch (error) {
+      setError("Error ending trip");
     }
   };
 
   const allRequiredFieldsFilled =
-    trip &&
-    trip.hours_fished &&
-    trip.water_temperature &&
-    trip.number_of_persons;
+    trip && hoursFishing && waterTemperature && numberOfFish;
 
   return (
     <Container maxWidth="sm">
       {/* Trip Header */}
       <Paper sx={{ p: 2, mb: 2 }}>
-        <Typography variant="h6">{trip?.target_species} Trip</Typography>
+        <Typography variant="h6">
+          {(trip?.target_species ?? "") + " Trip"}
+        </Typography>
         <Typography variant="body2" color="text.secondary">
-          {trip?.date ? new Date(trip.date).toLocaleDateString() : ""}
+          {trip?.date ? new Date(trip.date as string).toLocaleDateString() : ""}
         </Typography>
       </Paper>
 
@@ -99,23 +191,195 @@ export const ActiveTrip: React.FC = () => {
         </Stack>
       </Paper>
 
-      {/* Additional Details (with auto-save) */}
+      {/* Trip Details Form */}
       <Paper sx={{ p: 2, mb: 2 }}>
         <Typography variant="h6" gutterBottom>
           Trip Details
         </Typography>
-        <Stack spacing={2}>
+        <Stack spacing={3}>
+          {/* Hours Fishing */}
+          <Box>
+            <Typography gutterBottom>Hours fishing</Typography>
+            <ToggleButtonGroup
+              exclusive
+              fullWidth
+              value={hoursFishing}
+              onChange={(_, value) => {
+                if (value) {
+                  setHoursFishing(value);
+                  autoSave({ hours_fished: parseFloat(value) });
+                }
+              }}
+            >
+              <ToggleButton value="2">2h</ToggleButton>
+              <ToggleButton value="4">4h</ToggleButton>
+              <ToggleButton value="6">6h</ToggleButton>
+              <ToggleButton value="8">8h</ToggleButton>
+            </ToggleButtonGroup>
+          </Box>
+
+          {/* Number of Fish */}
           <NumberInput
-            label="Hours Fishing"
-            value={trip?.hours_fished?.toString() || ""}
+            label={`Caught ${trip?.target_species}`}
+            value={numberOfFish}
             onChange={(value) => {
-              setTrip((prev) =>
-                prev ? { ...prev, hours_fished: parseInt(value) } : null
-              );
-              autoSave({ hours_fished: parseInt(value) });
+              setNumberOfFish(value);
+              autoSave({ number_of_fish: parseInt(value) });
             }}
+            required
           />
-          {/* Other details with auto-save */}
+
+          {/* Perch-specific fields */}
+          {trip?.target_species === "perch" && (
+            <>
+              <NumberInput
+                label="Perch over 40 cm"
+                value={perchOver40cm}
+                onChange={(value) => {
+                  setPerchOver40cm(value);
+                  autoSave({ perch_over_40: parseInt(value) });
+                }}
+                required
+              />
+              <Box>
+                <Typography gutterBottom>Top 8 perch bag total</Typography>
+                <input
+                  type="number"
+                  value={bagTotal}
+                  onChange={(e) => {
+                    setBagTotal(e.target.value);
+                    autoSave({ bag_total: parseFloat(e.target.value) });
+                  }}
+                  style={{
+                    width: "100%",
+                    padding: "8px 12px",
+                    borderRadius: "4px",
+                    border: "1px solid #ddd",
+                    fontSize: "16px",
+                  }}
+                  placeholder="Enter weight in grams"
+                />
+              </Box>
+            </>
+          )}
+
+          {/* Bonus Fish */}
+          <Box>
+            <Stack direction="row" spacing={2}>
+              {trip?.target_species !== "perch" && (
+                <Box flex={1}>
+                  <NumberInput
+                    label="Bonus Perch"
+                    value={numberOfBonusPerch}
+                    onChange={(value) => {
+                      setNumberOfBonusPerch(value);
+                      autoSave({ number_of_bonus_perch: parseInt(value) });
+                    }}
+                    required
+                  />
+                </Box>
+              )}
+              {trip?.target_species !== "pike" && (
+                <Box flex={1}>
+                  <NumberInput
+                    label="Bonus Pike"
+                    value={numberOfBonusPike}
+                    onChange={(value) => {
+                      setNumberOfBonusPike(value);
+                      autoSave({ number_of_bonus_pike: parseInt(value) });
+                    }}
+                    required
+                  />
+                </Box>
+              )}
+              {trip?.target_species !== "zander" && (
+                <Box flex={1}>
+                  <NumberInput
+                    label="Bonus Zander"
+                    value={numberOfBonusZander}
+                    onChange={(value) => {
+                      setNumberOfBonusZander(value);
+                      autoSave({ number_of_bonus_zander: parseInt(value) });
+                    }}
+                    required
+                  />
+                </Box>
+              )}
+            </Stack>
+          </Box>
+
+          {/* Water Temperature */}
+          <Box>
+            <Typography gutterBottom>Water Temperature (°C)</Typography>
+            <Slider
+              value={parseFloat(waterTemperature) || 0}
+              onChange={(_, value) => {
+                setWaterTemperature(value.toString());
+                autoSave({ water_temperature: value });
+              }}
+              min={-2}
+              max={30}
+              marks
+              step={0.5}
+              valueLabelDisplay="auto"
+            />
+          </Box>
+
+          {/* Comment */}
+          <Box>
+            <Typography gutterBottom>Comment</Typography>
+            <textarea
+              value={comment}
+              onChange={(e) => {
+                setComment(e.target.value);
+                autoSave({ comment: e.target.value });
+              }}
+              style={{
+                width: "100%",
+                padding: "8px 12px",
+                borderRadius: "4px",
+                border: "1px solid #ddd",
+                fontSize: "16px",
+                minHeight: "100px",
+                resize: "vertical",
+              }}
+              placeholder="Add any notes about the trip..."
+            />
+          </Box>
+
+          {/* Fishing Buddies */}
+          <Box>
+            <Typography gutterBottom>Fishing buddies</Typography>
+            <Stack spacing={1}>
+              {availableBuddies.map((buddy) => (
+                <Chip
+                  key={buddy.id}
+                  label={buddy.name}
+                  onClick={() => {
+                    if (selectedBuddies.some((b) => b.id === buddy.id)) {
+                      setSelectedBuddies((prev) =>
+                        prev.filter((b) => b.id !== buddy.id)
+                      );
+                    } else {
+                      setSelectedBuddies((prev) => [...prev, buddy]);
+                    }
+                  }}
+                  color={
+                    selectedBuddies.some((b) => b.id === buddy.id)
+                      ? "primary"
+                      : "default"
+                  }
+                  sx={{
+                    width: "100%",
+                    height: "48px",
+                    "& .MuiChip-label": {
+                      fontSize: "1rem",
+                    },
+                  }}
+                />
+              ))}
+            </Stack>
+          </Box>
         </Stack>
       </Paper>
 
@@ -128,15 +392,13 @@ export const ActiveTrip: React.FC = () => {
         <AddIcon />
       </Fab>
 
-      {/* End Trip Button (enabled when required fields are filled) */}
+      {/* End Trip Button */}
       <Button
         variant="contained"
         color="success"
         fullWidth
         sx={{ mt: 2, mb: 4 }}
-        onClick={() => {
-          /* End trip logic */
-        }}
+        onClick={handleEndTrip}
         disabled={!allRequiredFieldsFilled}
       >
         End Trip
@@ -150,6 +412,12 @@ export const ActiveTrip: React.FC = () => {
       >
         {/* Add catch form */}
       </Dialog>
+
+      {error && (
+        <Typography color="error" sx={{ mt: 2 }}>
+          {error as string}
+        </Typography>
+      )}
     </Container>
   );
 };

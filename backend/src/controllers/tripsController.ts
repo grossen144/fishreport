@@ -300,4 +300,25 @@ export class TripsController {
       return res.status(500).json({ error: "Internal server error" });
     }
   };
+
+  getActiveTrip = async (req: Request, res: Response) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const trip = await this.fishingTripService.findActiveTrip(userId);
+      if (!trip) {
+        return res.status(404).json({ error: "No active trip found" });
+      }
+
+      return res.json(trip);
+    } catch (error) {
+      if (error instanceof Error) {
+        return res.status(400).json({ error: error.message });
+      }
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  };
 }

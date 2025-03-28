@@ -222,4 +222,12 @@ export class FishingTripService {
       await this.pool.query(query, [data.fishingTripId, buddyId]);
     }
   }
+
+  async findActiveTrip(userId: number): Promise<FishingTrip | null> {
+    const result = await this.pool.query(
+      "SELECT * FROM fishing_trips WHERE user_id = $1 AND status = $2 LIMIT 1",
+      [userId, "active"]
+    );
+    return result.rows[0] || null;
+  }
 }

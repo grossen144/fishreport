@@ -66,7 +66,7 @@ function App() {
                   }
                 />
                 <Route
-                  path="/active-trips"
+                  path="/active-trip/:id"
                   element={
                     <PrivateRoute>
                       <ActiveTrip />

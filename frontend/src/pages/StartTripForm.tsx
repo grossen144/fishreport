@@ -38,6 +38,8 @@ export const StartTripForm: React.FC = () => {
   const [availableBuddies, setAvailableBuddies] = useState<Buddy[]>([]);
   const [numberOfPersons, setNumberOfPersons] = useState("1");
   const [error, setError] = useState("");
+  const [hasActiveTrip, setHasActiveTrip] = useState(false);
+  const [activeTripId, setActiveTripId] = useState<number | null>(null);
 
   const fetchWeatherData = async (lat: number, lon: number) => {
     try {
@@ -122,6 +124,34 @@ export const StartTripForm: React.FC = () => {
     setNumberOfPersons(defaultPersons);
   }, [selectedBuddies]);
 
+  useEffect(() => {
+    const checkActiveTrip = async () => {
+      try {
+        const response = await axios.get(
+          "http://localhost:3003/api/trips/active",
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+
+        if (response.data && typeof response.data.id === "number") {
+          setHasActiveTrip(true);
+          setActiveTripId(response.data.id);
+        }
+      } catch (error) {
+        if (axios.isAxiosError(error) && error.response?.data?.error) {
+          setError(error.response.data.error);
+        } else {
+          setError("Error checking active trips");
+        }
+      }
+    };
+
+    checkActiveTrip();
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     try {
       e.preventDefault();
@@ -180,143 +210,165 @@ export const StartTripForm: React.FC = () => {
           Start New Trip
         </Typography>
 
-        <Stack spacing={3}>
-          {/* Species Selection */}
-          <Box>
-            <Typography gutterBottom>Targeted specie</Typography>
-            <ToggleButtonGroup
-              exclusive
-              fullWidth
-              value={species}
-              onChange={(_, newValue) => newValue && setSpecies(newValue)}
-            >
-              <ToggleButton value="perch">Perch</ToggleButton>
-              <ToggleButton value="pike">Pike</ToggleButton>
-              <ToggleButton value="zander">Zander</ToggleButton>
-            </ToggleButtonGroup>
-          </Box>
-
-          {/* Date Picker */}
-          <MobileDatePicker
-            label="Date*"
-            value={date}
-            onChange={(newDate) => setDate(newDate)}
-            slotProps={{
-              textField: { fullWidth: true },
-            }}
-          />
-
-          {/* Location Toggle */}
-          <Box>
-            <Typography gutterBottom>Location</Typography>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={useCurrentLocation}
-                  onChange={(e) => setUseCurrentLocation(e.target.checked)}
-                  color="primary"
-                />
+        {hasActiveTrip ? (
+          <Box sx={{ textAlign: "center", py: 4 }}>
+            <Typography variant="h6" color="error" gutterBottom>
+              You already have an active trip
+            </Typography>
+            <Typography color="text.secondary" gutterBottom>
+              Please complete or end your current trip before starting a new
+              one.
+            </Typography>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() =>
+                (window.location.href = `/active-trip/${activeTripId}`)
               }
-              label="Use current location"
-              sx={{
-                width: "100%",
-                margin: 0,
-                padding: "8px 16px",
-                backgroundColor: "background.paper",
-                borderRadius: 1,
-                "&:hover": {
-                  backgroundColor: "action.hover",
-                },
+              sx={{ mt: 2 }}
+            >
+              Go to Active Trip
+            </Button>
+          </Box>
+        ) : (
+          <Stack spacing={3}>
+            {/* Species Selection */}
+            <Box>
+              <Typography gutterBottom>Targeted specie</Typography>
+              <ToggleButtonGroup
+                exclusive
+                fullWidth
+                value={species}
+                onChange={(_, newValue) => newValue && setSpecies(newValue)}
+              >
+                <ToggleButton value="perch">Perch</ToggleButton>
+                <ToggleButton value="pike">Pike</ToggleButton>
+                <ToggleButton value="zander">Zander</ToggleButton>
+              </ToggleButtonGroup>
+            </Box>
+
+            {/* Date Picker */}
+            <MobileDatePicker
+              label="Date*"
+              value={date}
+              onChange={(newDate) => setDate(newDate)}
+              slotProps={{
+                textField: { fullWidth: true },
               }}
             />
-          </Box>
 
-          {!useCurrentLocation && (
+            {/* Location Toggle */}
             <Box>
-              <Typography gutterBottom>Location Name</Typography>
-              <input
-                type="text"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                placeholder="Enter location name"
-                style={{
+              <Typography gutterBottom>Location</Typography>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={useCurrentLocation}
+                    onChange={(e) => setUseCurrentLocation(e.target.checked)}
+                    color="primary"
+                  />
+                }
+                label="Use current location"
+                sx={{
                   width: "100%",
-                  padding: "8px 12px",
-                  borderRadius: "4px",
-                  border: "1px solid #ddd",
-                  fontSize: "16px",
+                  margin: 0,
+                  padding: "8px 16px",
+                  backgroundColor: "background.paper",
+                  borderRadius: 1,
+                  "&:hover": {
+                    backgroundColor: "action.hover",
+                  },
                 }}
               />
             </Box>
-          )}
 
-          {/* Buddy Selection */}
-          <Box>
-            <Typography gutterBottom>Fishing buddies</Typography>
-            <Stack spacing={1}>
-              {availableBuddies.map((buddy) => (
-                <Chip
-                  key={buddy.id}
-                  label={buddy.name}
-                  onClick={() => {
-                    if (selectedBuddies.some((b) => b.id === buddy.id)) {
-                      // Remove buddy if already selected
-                      setSelectedBuddies((prev) =>
-                        prev.filter((b) => b.id !== buddy.id)
-                      );
-                    } else {
-                      // Add buddy if not selected
-                      setSelectedBuddies((prev) => [...prev, buddy]);
-                    }
-                  }}
-                  color={
-                    selectedBuddies.some((b) => b.id === buddy.id)
-                      ? "primary"
-                      : "default"
-                  }
-                  sx={{
-                    width: "100%", // Full width chips
-                    height: "48px", // Taller chips for better touch targets
-                    "& .MuiChip-label": {
-                      fontSize: "1rem", // Larger text
-                    },
+            {!useCurrentLocation && (
+              <Box>
+                <Typography gutterBottom>Location Name</Typography>
+                <input
+                  type="text"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  placeholder="Enter location name"
+                  style={{
+                    width: "100%",
+                    padding: "8px 12px",
+                    borderRadius: "4px",
+                    border: "1px solid #ddd",
+                    fontSize: "16px",
                   }}
                 />
-              ))}
-            </Stack>
-            {selectedBuddies.length > 0 && (
-              <Typography sx={{ mt: 1, color: "text.secondary" }}>
-                Selected: {selectedBuddies.length}{" "}
-                {selectedBuddies.length === 1 ? "buddy" : "buddies"}
-              </Typography>
+              </Box>
             )}
-          </Box>
 
-          <Box>
-            <Typography gutterBottom>Number of persons</Typography>
-            <ToggleButtonGroup
-              exclusive
-              fullWidth
-              value={numberOfPersons}
-              onChange={(_, value) => value && setNumberOfPersons(value)}
+            {/* Buddy Selection */}
+            <Box>
+              <Typography gutterBottom>Fishing buddies</Typography>
+              <Stack spacing={1}>
+                {availableBuddies.map((buddy) => (
+                  <Chip
+                    key={buddy.id}
+                    label={buddy.name}
+                    onClick={() => {
+                      if (selectedBuddies.some((b) => b.id === buddy.id)) {
+                        // Remove buddy if already selected
+                        setSelectedBuddies((prev) =>
+                          prev.filter((b) => b.id !== buddy.id)
+                        );
+                      } else {
+                        // Add buddy if not selected
+                        setSelectedBuddies((prev) => [...prev, buddy]);
+                      }
+                    }}
+                    color={
+                      selectedBuddies.some((b) => b.id === buddy.id)
+                        ? "primary"
+                        : "default"
+                    }
+                    sx={{
+                      width: "100%", // Full width chips
+                      height: "48px", // Taller chips for better touch targets
+                      "& .MuiChip-label": {
+                        fontSize: "1rem", // Larger text
+                      },
+                    }}
+                  />
+                ))}
+              </Stack>
+              {selectedBuddies.length > 0 && (
+                <Typography sx={{ mt: 1, color: "text.secondary" }}>
+                  Selected: {selectedBuddies.length}{" "}
+                  {selectedBuddies.length === 1 ? "buddy" : "buddies"}
+                </Typography>
+              )}
+            </Box>
+
+            <Box>
+              <Typography gutterBottom>Number of persons</Typography>
+              <ToggleButtonGroup
+                exclusive
+                fullWidth
+                value={numberOfPersons}
+                onChange={(_, value) => value && setNumberOfPersons(value)}
+              >
+                <ToggleButton value="1">1</ToggleButton>
+                <ToggleButton value="2">2</ToggleButton>
+                <ToggleButton value="3">3</ToggleButton>
+                <ToggleButton value="4">4</ToggleButton>
+                <ToggleButton value="5">5</ToggleButton>
+              </ToggleButtonGroup>
+            </Box>
+
+            <Button
+              variant="contained"
+              size="large"
+              onClick={handleSubmit}
+              disabled={!species || !date}
             >
-              <ToggleButton value="1">1</ToggleButton>
-              <ToggleButton value="2">2</ToggleButton>
-              <ToggleButton value="3">3</ToggleButton>
-              <ToggleButton value="4">4</ToggleButton>
-              <ToggleButton value="5">5</ToggleButton>
-            </ToggleButtonGroup>
-          </Box>
-
-          <Button
-            variant="contained"
-            size="large"
-            onClick={handleSubmit}
-            disabled={!species || !date}
-          >
-            Start Trip
-          </Button>
-        </Stack>
+              Start Trip
+            </Button>
+          </Stack>
+        )}
       </Paper>
     </Container>
   );
