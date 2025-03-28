@@ -29,6 +29,10 @@ export const fishingTripSchema = z.object({
     .number()
     .min(0, "Number of bonus zander must be positive")
     .nullable(),
+  number_of_bonus_perch: z
+    .number()
+    .min(0, "Number of bonus perch must be positive")
+    .nullable(),
   water_temperature: z.number().min(-3).max(35).nullable(),
   bag_total: z.number().min(0).nullable(),
   comment: z.string().max(1000).nullable(),

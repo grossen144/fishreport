@@ -159,7 +159,7 @@ const Dashboard: React.FC = () => {
 
       <div style={gridStyle}>
         <div style={cardStyle}>
-          <h2 style={cardTitleStyle}>Total Reports</h2>
+          <h2 style={cardTitleStyle}>Total fishing trips</h2>
           <p style={cardValueStyle}>{stats.totalReports}</p>
         </div>
 

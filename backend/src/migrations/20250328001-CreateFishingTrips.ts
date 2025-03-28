@@ -16,6 +16,7 @@ exports.up = async function (pool: Pool) {
       bag_total DECIMAL(6,2),
       number_of_bonus_zander INTEGER,
       number_of_bonus_pike INTEGER,
+      number_of_bonus_perch INTEGER,
       perch_over_40 INTEGER,
       comment TEXT,
       weather_data JSONB,

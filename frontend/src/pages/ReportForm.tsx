@@ -3,6 +3,19 @@ import axios from "axios";
 import { useAuth } from "../contexts/AuthContext";
 import { LunarData, WeatherData } from "@fishreport/shared/types/weather";
 import { MobileDateTimePicker, MobileDatePicker } from "@mui/x-date-pickers";
+import {
+  Container,
+  Box,
+  Stack,
+  ToggleButtonGroup,
+  ToggleButton,
+  Slider,
+  IconButton,
+  Typography,
+  Paper,
+  Chip,
+} from "@mui/material";
+import { Add as AddIcon, Remove as RemoveIcon } from "@mui/icons-material";
 
 const ReportForm: React.FC = () => {
   const { user } = useAuth();
@@ -16,9 +29,10 @@ const ReportForm: React.FC = () => {
   const [hoursFishing, setHoursFishing] = useState("");
   const [numberOfPersons, setNumberOfPersons] = useState("1");
   const [numberOfFish, setNumberOfFish] = useState("");
-  const [fishOver40cm, setFishOver40cm] = useState("");
-  const [bonusPike, setBonusPike] = useState("");
-  const [bonusZander, setBonusZander] = useState("");
+  const [perchOver40cm, setPerchOver40cm] = useState("");
+  const [numberOfBonusPike, setNumberOfBonusPike] = useState("");
+  const [numberOfBonusZander, setNumberOfBonusZander] = useState("");
+  const [numberOfBonusPerch, setNumberOfBonusPerch] = useState("");
   const [waterTemperature, setWaterTemperature] = useState("");
   const [bagTotal, setBagTotal] = useState("");
   const [comment, setComment] = useState("");
@@ -129,9 +143,10 @@ const ReportForm: React.FC = () => {
         hours_fished: parseFloat(hoursFishing) || 0,
         number_of_persons: parseInt(numberOfPersons) || 1,
         number_of_fish: parseInt(numberOfFish) || 0,
-        perch_over_40: parseInt(fishOver40cm) || null,
-        number_of_bonus_pike: parseInt(bonusPike) || null,
-        number_of_bonus_zander: parseInt(bonusZander) || null,
+        perch_over_40: parseInt(perchOver40cm) || null,
+        number_of_bonus_pike: parseInt(numberOfBonusPike) || null,
+        number_of_bonus_zander: parseInt(numberOfBonusZander) || null,
+        number_of_bonus_perch: parseInt(numberOfBonusPerch) || null,
         water_temperature: parseFloat(waterTemperature) || null,
         bag_total: parseFloat(bagTotal) || null,
         comment: comment || null,
@@ -155,9 +170,9 @@ const ReportForm: React.FC = () => {
       setHoursFishing("");
       setNumberOfPersons("1");
       setNumberOfFish("");
-      setFishOver40cm("");
-      setBonusPike("");
-      setBonusZander("");
+      setPerchOver40cm("");
+      setNumberOfBonusPike("");
+      setNumberOfBonusZander("");
       setWaterTemperature("");
       setBagTotal("");
       setComment("");
@@ -190,24 +205,20 @@ const ReportForm: React.FC = () => {
   const containerStyle = {
     maxWidth: "800px",
     margin: "0 auto",
-    padding: "20px",
+    padding: "12px",
   };
 
   const formCardStyle = {
     backgroundColor: "#ffffff",
     borderRadius: "8px",
     boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-    padding: "24px",
+    padding: "16px",
   };
 
   const formGridStyle = {
-    display: "grid",
-    gridTemplateColumns: "repeat(2, 1fr)",
+    display: "flex",
+    flexDirection: "column" as const,
     gap: "20px",
-  };
-
-  const fullWidthStyle = {
-    gridColumn: "1 / -1",
   };
 
   const labelStyle = {
@@ -291,26 +302,61 @@ const ReportForm: React.FC = () => {
     fontSize: "14px",
   };
 
+  const NumberInput: React.FC<{
+    label: string;
+    value: string;
+    onChange: (value: string) => void;
+    required?: boolean;
+  }> = ({ label, value, onChange, required }) => {
+    const handleChange = (increment: boolean) => {
+      const currentValue = parseInt(value) || 0;
+      onChange(
+        (increment
+          ? currentValue + 1
+          : Math.max(0, currentValue - 1)
+        ).toString()
+      );
+    };
+
+    return (
+      <Box>
+        <Typography gutterBottom>{label}</Typography>
+        <Stack direction="row" alignItems="center" spacing={2}>
+          <IconButton onClick={() => handleChange(false)}>
+            <RemoveIcon />
+          </IconButton>
+          <Typography sx={{ minWidth: 40, textAlign: "center" }}>
+            {value || "0"}
+          </Typography>
+          <IconButton onClick={() => handleChange(true)}>
+            <AddIcon />
+          </IconButton>
+        </Stack>
+      </Box>
+    );
+  };
+
   return (
     <div style={containerStyle}>
       <div style={formCardStyle}>
         <h1 style={{ marginBottom: "24px", color: "#333" }}>
-          New Fishing Report
+          New Fishing Trip
         </h1>
         <form onSubmit={handleSubmit} style={formGridStyle}>
           <div>
-            <label style={labelStyle}>
-              Species
-              <select
-                style={inputStyle}
+            <Box>
+              <Typography gutterBottom>Targeted specie</Typography>
+              <ToggleButtonGroup
+                exclusive
+                fullWidth
                 value={species}
-                onChange={(e) => setSpecies(e.target.value)}
+                onChange={(_, newValue) => newValue && setSpecies(newValue)}
               >
-                <option value="perch">Perch</option>
-                <option value="pike">Pike</option>
-                <option value="zander">Zander</option>
-              </select>
-            </label>
+                <ToggleButton value="perch">Perch</ToggleButton>
+                <ToggleButton value="pike">Pike</ToggleButton>
+                <ToggleButton value="zander">Zander</ToggleButton>
+              </ToggleButtonGroup>
+            </Box>
           </div>
 
           <div>
@@ -332,84 +378,50 @@ const ReportForm: React.FC = () => {
             />
           </div>
 
-          <div style={fullWidthStyle}>
-            <label style={labelStyle}>Fishing Buddies</label>
-            <div
-              style={{
-                border: "1px solid #ddd",
-                borderRadius: "4px",
-                padding: "8px",
-                minHeight: "100px",
-              }}
-            >
-              <div style={{ marginBottom: "8px" }}>
-                {selectedBuddies.map((buddy) => (
-                  <span
+          <div>
+            <Box>
+              <Typography gutterBottom>Fishing buddies</Typography>
+              <Stack spacing={1}>
+                {availableBuddies.map((buddy) => (
+                  <Chip
                     key={buddy.id}
-                    style={{
-                      background: "#e0e0e0",
-                      padding: "4px 8px",
-                      borderRadius: "16px",
-                      margin: "0 4px 4px 0",
-                      display: "inline-block",
-                    }}
-                  >
-                    {buddy.name}
-                    <button
-                      onClick={() =>
+                    label={buddy.name}
+                    onClick={() => {
+                      if (selectedBuddies.some((b) => b.id === buddy.id)) {
+                        // Remove buddy if already selected
                         setSelectedBuddies((prev) =>
                           prev.filter((b) => b.id !== buddy.id)
-                        )
+                        );
+                      } else {
+                        // Add buddy if not selected
+                        setSelectedBuddies((prev) => [...prev, buddy]);
                       }
-                      style={{
-                        marginLeft: "4px",
-                        border: "none",
-                        background: "none",
-                        cursor: "pointer",
-                      }}
-                    >
-                      ×
-                    </button>
-                  </span>
+                    }}
+                    color={
+                      selectedBuddies.some((b) => b.id === buddy.id)
+                        ? "primary"
+                        : "default"
+                    }
+                    sx={{
+                      width: "100%", // Full width chips
+                      height: "48px", // Taller chips for better touch targets
+                      "& .MuiChip-label": {
+                        fontSize: "1rem", // Larger text
+                      },
+                    }}
+                  />
                 ))}
-              </div>
-
-              <select
-                style={inputStyle}
-                value=""
-                onChange={(e) => {
-                  const selectedId = parseInt(e.target.value);
-                  const buddy = availableBuddies.find(
-                    (b) => b.id === selectedId
-                  );
-                  if (
-                    buddy &&
-                    !selectedBuddies.some(
-                      (selected) => selected.id === buddy.id
-                    )
-                  ) {
-                    setSelectedBuddies((prev) => [...prev, buddy]);
-                  }
-                }}
-              >
-                <option value="">Select fishing buddies...</option>
-                {availableBuddies
-                  .filter(
-                    (buddy) =>
-                      !selectedBuddies.some(
-                        (selected) => selected.id === buddy.id
-                      )
-                  )
-                  .map((buddy) => (
-                    <option key={buddy.id} value={buddy.id}>
-                      {buddy.name}
-                    </option>
-                  ))}
-              </select>
-            </div>
+              </Stack>
+              {selectedBuddies.length > 0 && (
+                <Typography sx={{ mt: 1, color: "text.secondary" }}>
+                  Selected: {selectedBuddies.length}{" "}
+                  {selectedBuddies.length === 1 ? "buddy" : "buddies"}
+                </Typography>
+              )}
+            </Box>
           </div>
 
-          <div style={fullWidthStyle}>
+          <div>
             <label style={switchContainerStyle}>
               <div style={switchStyle}>
                 <input
@@ -433,9 +445,9 @@ const ReportForm: React.FC = () => {
           </div>
 
           {!useCurrentLocation && (
-            <div style={fullWidthStyle}>
+            <div>
               <label style={labelStyle}>
-                Location Name
+                Location name
                 <input
                   type="text"
                   style={inputStyle}
@@ -448,110 +460,131 @@ const ReportForm: React.FC = () => {
           )}
 
           <div>
-            <label style={labelStyle}>
-              Hours Fishing
-              <input
-                type="number"
-                style={inputStyle}
+            <Box>
+              <Typography gutterBottom>Hours fishing</Typography>
+              <ToggleButtonGroup
+                exclusive
+                fullWidth
                 value={hoursFishing}
-                onChange={(e) => setHoursFishing(e.target.value)}
-                required
-              />
-            </label>
+                onChange={(_, value) => value && setHoursFishing(value)}
+              >
+                <ToggleButton value="2">2h</ToggleButton>
+                <ToggleButton value="4">4h</ToggleButton>
+                <ToggleButton value="6">6h</ToggleButton>
+                <ToggleButton value="8">8h</ToggleButton>
+              </ToggleButtonGroup>
+            </Box>
           </div>
 
           <div>
-            <label style={labelStyle}>
-              Number of Persons
-              <input
-                type="number"
-                style={inputStyle}
+            <Box>
+              <Typography gutterBottom>Number of persons</Typography>
+              <ToggleButtonGroup
+                exclusive
+                fullWidth
                 value={numberOfPersons}
-                onChange={(e) => setNumberOfPersons(e.target.value)}
-                placeholder={`Default: ${selectedBuddies.length + 1}`}
-                required
-              />
-            </label>
+                onChange={(_, value) => value && setNumberOfPersons(value)}
+              >
+                <ToggleButton value="1">1</ToggleButton>
+                <ToggleButton value="2">2</ToggleButton>
+                <ToggleButton value="3">3</ToggleButton>
+                <ToggleButton value="4">4</ToggleButton>
+                <ToggleButton value="5">5</ToggleButton>
+              </ToggleButtonGroup>
+            </Box>
           </div>
 
           <div>
-            <label style={labelStyle}>
-              Number of {species} caught
-              <input
-                type="number"
-                style={inputStyle}
-                value={numberOfFish}
-                onChange={(e) => setNumberOfFish(e.target.value)}
-                required
-              />
-            </label>
+            <NumberInput
+              label={`Caught ${species}`}
+              value={numberOfFish}
+              onChange={setNumberOfFish}
+              required
+            />
           </div>
 
           {species === "perch" && (
             <>
-              <div>
+              <Box>
+                <NumberInput
+                  label="Perch over 40 cm"
+                  value={perchOver40cm}
+                  onChange={setPerchOver40cm}
+                  required
+                />
+              </Box>
+              <Box>
                 <label style={labelStyle}>
-                  Perch over 40 cm
+                  Top 8 {species} bag total
                   <input
                     type="number"
                     style={inputStyle}
-                    value={fishOver40cm}
-                    onChange={(e) => setFishOver40cm(e.target.value)}
+                    value={bagTotal}
+                    onChange={(e) => setBagTotal(e.target.value)}
                   />
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ mt: 0.5 }}
+                  >
+                    Enter weight in grams
+                  </Typography>
                 </label>
-              </div>
-
-              <div>
-                <label style={labelStyle}>
-                  Bonus Pike
-                  <input
-                    type="number"
-                    style={inputStyle}
-                    value={bonusPike}
-                    onChange={(e) => setBonusPike(e.target.value)}
-                  />
-                </label>
-              </div>
-
-              <div>
-                <label style={labelStyle}>
-                  Bonus Zander
-                  <input
-                    type="number"
-                    style={inputStyle}
-                    value={bonusZander}
-                    onChange={(e) => setBonusZander(e.target.value)}
-                  />
-                </label>
-              </div>
+              </Box>
             </>
           )}
 
+          <Box>
+            <Stack direction="row" spacing={2}>
+              {species !== "perch" && (
+                <Box flex={1}>
+                  <NumberInput
+                    label="Bonus Perch"
+                    value={numberOfBonusPerch}
+                    onChange={setNumberOfBonusPerch}
+                    required
+                  />
+                </Box>
+              )}
+              {species !== "pike" && (
+                <Box flex={1}>
+                  <NumberInput
+                    label="Bonus Pike"
+                    value={numberOfBonusPike}
+                    onChange={setNumberOfBonusPike}
+                    required
+                  />
+                </Box>
+              )}
+              {species !== "zander" && (
+                <Box flex={1}>
+                  <NumberInput
+                    label="Bonus Zander"
+                    value={numberOfBonusZander}
+                    onChange={setNumberOfBonusZander}
+                    required
+                  />
+                </Box>
+              )}
+            </Stack>
+          </Box>
+
           <div>
-            <label style={labelStyle}>
-              Water Temperature
-              <input
-                type="number"
-                style={inputStyle}
-                value={waterTemperature}
-                onChange={(e) => setWaterTemperature(e.target.value)}
+            <Box>
+              <Typography gutterBottom>Water Temperature (°C)</Typography>
+              <Slider
+                value={parseFloat(waterTemperature) || 0}
+                onChange={(_, value) => setWaterTemperature(value.toString())}
+                min={-2}
+                max={30}
+                marks
+                step={0.5}
+                valueLabelDisplay="auto"
               />
-            </label>
+            </Box>
           </div>
 
           <div>
-            <label style={labelStyle}>
-              Bag Total
-              <input
-                type="number"
-                style={inputStyle}
-                value={bagTotal}
-                onChange={(e) => setBagTotal(e.target.value)}
-              />
-            </label>
-          </div>
-
-          <div style={fullWidthStyle}>
             <label style={labelStyle}>
               Comment
               <textarea
@@ -567,46 +600,38 @@ const ReportForm: React.FC = () => {
           </div>
 
           {weatherData && (
-            <div style={fullWidthStyle}>
+            <div>
               <h3 style={{ marginBottom: "16px", color: "#333" }}>
                 Weather Data
               </h3>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(3, 1fr)",
-                  gap: "16px",
-                }}
-              >
-                <div>
-                  <strong>Temperature:</strong> {weatherData.main.temp}°C
-                </div>
-                <div>
-                  <strong>Wind Speed:</strong> {weatherData.wind.speed} m/s
-                </div>
-                <div>
-                  <strong>Wind Direction:</strong>{" "}
-                  {getWindDirection(weatherData.wind.deg)}
-                </div>
-                <div>
-                  <strong>Weather Condition:</strong>{" "}
-                  {weatherData.weather[0].description}
-                </div>
-                <div>
-                  <strong>Barometric Pressure:</strong>{" "}
-                  {weatherData.main.pressure} hPa
-                </div>
-                <div>
-                  <strong>Lunar Phase:</strong>
-                  {lunarData?.[0]?.Moon[0]}
-                </div>
+              <div>
+                <strong>Temperature:</strong> {weatherData.main.temp}°C
+              </div>
+              <div>
+                <strong>Wind Speed:</strong> {weatherData.wind.speed} m/s
+              </div>
+              <div>
+                <strong>Wind Direction:</strong>{" "}
+                {getWindDirection(weatherData.wind.deg)}
+              </div>
+              <div>
+                <strong>Weather Condition:</strong>{" "}
+                {weatherData.weather[0].description}
+              </div>
+              <div>
+                <strong>Barometric Pressure:</strong>{" "}
+                {weatherData.main.pressure} hPa
+              </div>
+              <div>
+                <strong>Lunar Phase:</strong>
+                {lunarData?.[0]?.Moon[0]}
               </div>
             </div>
           )}
 
           {error && <div style={errorStyle}>{error}</div>}
 
-          <div style={fullWidthStyle}>
+          <div>
             <button type="submit" style={buttonStyle}>
               Submit Report
             </button>
