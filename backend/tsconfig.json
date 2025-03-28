@@ -23,7 +23,7 @@
     "resolveJsonModule": true,
     "baseUrl": ".",
     "paths": {
-      "@shared/*": ["../shared/*"]
+      "@fishreport/shared/*": ["../shared/*"]
     }
   },
   "exclude": ["node_modules"],

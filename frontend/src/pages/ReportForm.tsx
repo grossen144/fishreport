@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useAuth } from "../contexts/AuthContext";
-import { LunarData, WeatherData } from "@shared/types/weather";
+import { LunarData, WeatherData } from "@fishreport/shared/types/weather";
 
 const ReportForm: React.FC = () => {
   const { user } = useAuth();
