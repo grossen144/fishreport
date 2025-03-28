@@ -15,8 +15,8 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import ReportForm from "./pages/ReportForm";
 import Profile from "./pages/Profile";
-import { StartTripForm } from "./pages/StartTripForm";
-import { ActiveTrip } from "./pages/ActiveTrip";
+import { StartTripForm } from "./pages/StartFishingTripForm";
+import { ActiveTrip } from "./pages/ActiveFishingTrip";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 
 const theme = createTheme({

@@ -3,7 +3,7 @@ import {
   AddTripBuddiesInput,
   FishingTrip,
   StartTripInput,
-} from "../schemas/fishing-trip.schema";
+} from "../schemas/fishingTripSchema";
 
 export class FishingTripService {
   constructor(private pool: Pool) {}

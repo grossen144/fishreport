@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import { UserService } from "../services/user.service";
-import { CreateUserInput, LoginInput } from "../schemas/user.schema";
+import { UserService } from "../services/userService";
+import { CreateUserInput, LoginInput } from "../schemas/userSchema";
 import jwt from "jsonwebtoken";
 
 export class AuthController {

@@ -1,13 +1,13 @@
 import { Request, Response } from "express";
-import { pool } from "../services/db.service";
+import { pool } from "../services/dbService";
 import { weatherDataSchema } from "@fishreport/shared/types/weather";
 import { ZodError } from "zod";
 import {
   addTripBuddiesSchema,
   completeTripSchema,
   startTripSchema,
-} from "../schemas/fishing-trip.schema";
-import { FishingTripService } from "../services/fishing-trip.service";
+} from "../schemas/fishingTripSchema";
+import { FishingTripService } from "../services/fishingTripService";
 
 declare global {
   namespace Express {

@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { UserService } from "../services/user.service";
-import { pool } from "../services/db.service";
+import { UserService } from "../services/userService";
+import { pool } from "../services/dbService";
 import jwt from "jsonwebtoken";
 import { authenticateToken } from "../middleware/auth";
 
