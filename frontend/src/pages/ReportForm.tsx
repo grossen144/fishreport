@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useAuth } from "../contexts/AuthContext";
 import { LunarData, WeatherData } from "@fishreport/shared/types/weather";
+import { MobileDateTimePicker, MobileDatePicker } from "@mui/x-date-pickers";
 
 const ReportForm: React.FC = () => {
   const { user } = useAuth();
@@ -313,16 +314,22 @@ const ReportForm: React.FC = () => {
           </div>
 
           <div>
-            <label style={labelStyle}>
-              Date
-              <input
-                type="date"
-                style={inputStyle}
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                required
-              />
-            </label>
+            <MobileDatePicker
+              label="Date"
+              value={date ? new Date(date) : null}
+              onChange={(newDate) => {
+                if (newDate) {
+                  setDate(newDate.toISOString().split("T")[0]);
+                }
+              }}
+              slotProps={{
+                textField: {
+                  fullWidth: true,
+                  required: true,
+                  sx: { mb: 2 },
+                },
+              }}
+            />
           </div>
 
           <div style={fullWidthStyle}>
