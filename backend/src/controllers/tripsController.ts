@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
-import { FishingReportService } from "../services/fishing-report.service";
 import { pool } from "../services/db.service";
 import { weatherSchema } from "@fishreport/shared/types/weather";
 import { ZodError } from "zod";
-import { fishingReportSchema } from "../schemas/fishing-report.schema";
+import { fishingTripSchema } from "../schemas/fishing-trip.schema";
+import { FishingTripService } from "../services/fishing-trip.service";
 
 declare global {
   namespace Express {
@@ -17,26 +17,26 @@ declare global {
   }
 }
 
-export class ReportController {
-  private fishingReportService: FishingReportService;
+export class TripsController {
+  private fishingTripService: FishingTripService;
 
   constructor() {
-    this.fishingReportService = new FishingReportService(pool);
+    this.fishingTripService = new FishingTripService(pool);
   }
 
-  createReport = async (req: Request, res: Response) => {
+  createTrip = async (req: Request, res: Response) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
         return res.status(401).json({ error: "Unauthorized" });
       }
 
-      const validatedReport = fishingReportSchema.parse(req.body);
-      const report = await this.fishingReportService.create(
+      const validatedTrip = fishingTripSchema.parse(req.body);
+      const trip = await this.fishingTripService.create_trip(
         userId,
-        validatedReport
+        validatedTrip
       );
-      return res.status(201).json(report);
+      return res.status(201).json(trip);
     } catch (error) {
       if (error instanceof ZodError) {
         return res.status(400).json({ error: error.errors });
@@ -55,8 +55,8 @@ export class ReportController {
         return res.status(401).json({ error: "Unauthorized" });
       }
 
-      const reports = await this.fishingReportService.findByUserId(userId);
-      return res.json(reports);
+      const trips = await this.fishingTripService.findByUserId(userId);
+      return res.json(trips);
     } catch (error) {
       if (error instanceof Error) {
         return res.status(400).json({ error: error.message });
@@ -80,21 +80,21 @@ export class ReportController {
         return res.status(401).json({ error: "Unauthorized" });
       }
 
-      const report = await this.fishingReportService.findById(reportId);
-      if (!report) {
+      const trip = await this.fishingTripService.findById(reportId);
+      if (!trip) {
         return res.status(404).json({ error: "Report not found" });
       }
 
-      if (report.user_id !== userId) {
+      if (trip.user_id !== userId.toString()) {
         return res.status(403).json({ error: "Forbidden" });
       }
 
-      return res.json(report);
+      return res.json(trip);
     } catch (error) {
       if (error instanceof Error) {
         return res.status(400).json({ error: error.message });
       }
-      return res.status(500).json({ error: "Failed to fetch report" });
+      return res.status(500).json({ error: "Failed to fetch trip" });
     }
   };
 
@@ -105,22 +105,22 @@ export class ReportController {
         return res.status(401).json({ error: "Unauthorized" });
       }
 
-      const report = await this.fishingReportService.findById(
+      const trip = await this.fishingTripService.findById(
         parseInt(req.params.id)
       );
-      if (!report) {
-        return res.status(404).json({ error: "Report not found" });
+      if (!trip) {
+        return res.status(404).json({ error: "Trip not found" });
       }
 
-      if (report.user_id !== userId) {
+      if (trip.user_id !== userId.toString()) {
         return res.status(403).json({ error: "Forbidden" });
       }
 
-      const updatedReport = await this.fishingReportService.update(
+      const updatedTrip = await this.fishingTripService.update(
         parseInt(req.params.id),
         req.body
       );
-      return res.json(updatedReport);
+      return res.json(updatedTrip);
     } catch (error) {
       if (error instanceof Error) {
         return res.status(400).json({ error: error.message });
@@ -136,18 +136,18 @@ export class ReportController {
         return res.status(401).json({ error: "Unauthorized" });
       }
 
-      const report = await this.fishingReportService.findById(
+      const trip = await this.fishingTripService.findById(
         parseInt(req.params.id)
       );
-      if (!report) {
-        return res.status(404).json({ error: "Report not found" });
+      if (!trip) {
+        return res.status(404).json({ error: "Trip not found" });
       }
 
-      if (report.user_id !== userId) {
+      if (trip.user_id !== userId.toString()) {
         return res.status(403).json({ error: "Forbidden" });
       }
 
-      await this.fishingReportService.delete(parseInt(req.params.id));
+      await this.fishingTripService.delete(parseInt(req.params.id));
       return res.status(204).send();
     } catch (error) {
       if (error instanceof Error) {
@@ -164,7 +164,7 @@ export class ReportController {
         return res.status(401).json({ error: "Unauthorized" });
       }
 
-      const stats = await this.fishingReportService.getStats(userId);
+      const stats = await this.fishingTripService.getStats(userId);
       return res.json(stats);
     } catch (error) {
       if (error instanceof Error) {

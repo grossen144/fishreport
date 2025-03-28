@@ -1,11 +1,11 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import reportRoutes from "./routes/reports";
-import weatherRoutes from "./routes/weather";
+import reportRoutes from "./routes/tripRoutes";
+import weatherRoutes from "./routes/weatherRoutes";
 import { errorHandler } from "./middleware/error";
-import authRoutes from "./routes/auth";
-import userRoutes from "./routes/users";
+import authRoutes from "./routes/authRoutes";
+import userRoutes from "./routes/usersRoutes";
 
 dotenv.config();
 

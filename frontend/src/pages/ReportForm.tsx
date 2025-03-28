@@ -119,7 +119,8 @@ const ReportForm: React.FC = () => {
     e.preventDefault();
     try {
       const reportData = {
-        species,
+        user_id: user?.id,
+        target_species: species,
         date,
         latitude: location.latitude || null,
         longitude: location.longitude || null,
@@ -127,14 +128,14 @@ const ReportForm: React.FC = () => {
         hours_fished: parseFloat(hoursFishing) || 0,
         number_of_persons: parseInt(numberOfPersons) || 1,
         number_of_fish: parseInt(numberOfFish) || 0,
-        fish_over_40cm: parseInt(fishOver40cm) || null,
-        bonus_pike: parseInt(bonusPike) || null,
-        bonus_zander: parseInt(bonusZander) || null,
+        perch_over_40: parseInt(fishOver40cm) || null,
+        number_of_bonus_pike: parseInt(bonusPike) || null,
+        number_of_bonus_zander: parseInt(bonusZander) || null,
         water_temperature: parseFloat(waterTemperature) || null,
         bag_total: parseFloat(bagTotal) || null,
         comment: comment || null,
         weather_data: weatherData || null,
-        lunar_phase: lunarData || null,
+        lunar_data: lunarData || null,
         buddy_ids: selectedBuddies.map((buddy) => buddy.id),
       };
 

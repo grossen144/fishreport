@@ -1,24 +1,24 @@
 import { Pool } from "pg";
 import {
-  CreateFishingReportInput,
-  UpdateFishingReportInput,
-} from "../schemas/fishing-report.schema";
-import { FishingReport } from "src/models/fishing-report.model";
+  CreateFishingTripInput,
+  FishingTrip,
+  UpdateFishingTripInput,
+} from "../schemas/fishing-trip.schema";
 
-export class FishingReportService {
+export class FishingTripService {
   constructor(private pool: Pool) {}
 
-  async create(
+  async create_trip(
     userId: number,
-    data: CreateFishingReportInput
-  ): Promise<FishingReport> {
+    data: CreateFishingTripInput
+  ): Promise<FishingTrip> {
     const query = `
       INSERT INTO fishing_trips (
-        user_id, species, date, location, hours_fished,
-        number_of_persons, number_of_fish, fish_over_40cm,
-        bonus_pike, bonus_zander, water_temperature,
+        user_id, target_species, date, location, hours_fished,
+        number_of_persons, number_of_fish, perch_over_40,
+        number_of_bonus_pike, number_of_bonus_zander, water_temperature,
         bag_total, comment, latitude, longitude,
-        weather_data, lunar_phase
+        weather_data, lunar_data
       )
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
       RETURNING *
@@ -26,29 +26,29 @@ export class FishingReportService {
 
     const values = [
       userId,
-      data.species,
+      data.target_species,
       data.date,
       data.location,
       data.hours_fished,
       data.number_of_persons,
       data.number_of_fish,
-      data.fish_over_40cm,
-      data.bonus_pike,
-      data.bonus_zander,
+      data.perch_over_40,
+      data.number_of_bonus_pike,
+      data.number_of_bonus_zander,
       data.water_temperature,
       data.bag_total,
       data.comment,
       data.latitude,
       data.longitude,
       JSON.stringify(data.weather_data),
-      JSON.stringify(data.lunar_phase),
+      JSON.stringify(data.lunar_data),
     ];
 
     const result = await this.pool.query(query, values);
     return result.rows[0];
   }
 
-  async findById(id: number): Promise<FishingReport | null> {
+  async findById(id: number): Promise<FishingTrip | null> {
     const query = `
       SELECT *
       FROM fishing_trips
@@ -60,7 +60,7 @@ export class FishingReportService {
     return result.rows[0] || null;
   }
 
-  async findByUserId(userId: number): Promise<FishingReport[]> {
+  async findByUserId(userId: number): Promise<FishingTrip[]> {
     const query = `
       SELECT *
       FROM fishing_trips
@@ -74,8 +74,8 @@ export class FishingReportService {
 
   async update(
     id: number,
-    data: UpdateFishingReportInput
-  ): Promise<FishingReport | null> {
+    data: UpdateFishingTripInput
+  ): Promise<FishingTrip | null> {
     const keys = Object.keys(data);
     const setClause = keys
       .map((key, index) => `${key} = $${index + 1}`)
