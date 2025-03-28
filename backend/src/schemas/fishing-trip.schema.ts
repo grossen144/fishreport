@@ -1,7 +1,7 @@
 import { z } from "zod";
 import {
   lunarDataSchema,
-  weatherSchema,
+  weatherDataSchema,
 } from "@fishreport/shared/types/weather";
 
 export const FishSpecies = z.enum(["perch", "pike", "zander"]);
@@ -17,7 +17,7 @@ export const startTripSchema = z.object({
   longitude: z.number().min(-180).max(180).nullable(),
   number_of_persons: z.number().min(1, "At least one person is required"),
   lunar_data: lunarDataSchema.nullable(),
-  weather_data: weatherSchema.nullable(),
+  weather_data: weatherDataSchema.nullable(),
   status: z.enum(["active", "completed"]),
 });
 
@@ -59,6 +59,5 @@ export const addTripBuddiesSchema = z.object({
 });
 
 export type StartTripInput = z.infer<typeof startTripSchema>;
-export type CompleteTripInput = z.infer<typeof completeTripSchema>;
 export type FishingTrip = z.infer<typeof completeTripSchema>;
 export type AddTripBuddiesInput = z.infer<typeof addTripBuddiesSchema>;

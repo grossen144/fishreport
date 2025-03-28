@@ -1,7 +1,6 @@
 import { Pool } from "pg";
 import {
   AddTripBuddiesInput,
-  CompleteTripInput,
   FishingTrip,
   StartTripInput,
 } from "../schemas/fishing-trip.schema";
@@ -37,10 +36,7 @@ export class FishingTripService {
     return result.rows[0];
   }
 
-  async createTrip(
-    userId: number,
-    data: CompleteTripInput
-  ): Promise<FishingTrip> {
+  async createTrip(userId: number, data: FishingTrip): Promise<FishingTrip> {
     const query = `
       INSERT INTO fishing_trips (
         user_id, target_species, date, location, hours_fished,
@@ -79,9 +75,19 @@ export class FishingTripService {
 
   async findById(id: number): Promise<FishingTrip | null> {
     const query = `
-      SELECT *
-      FROM fishing_trips
-      WHERE id = $1
+      SELECT ft.user_id, ft.target_species, ft.date, ft.location, ft.hours_fished, 
+      ft.water_temperature, ft.hours_fished, ft.number_of_persons, 
+      ft.number_of_fish, ft.perch_over_40, ft.number_of_bonus_pike, ft.number_of_bonus_zander, 
+      ft.bag_total, ft.comment, ft.latitude, ft.longitude,
+      COALESCE(array_agg(u.id), '{}') as buddy_ids
+      FROM fishing_trips ft
+      LEFT JOIN fishing_trip_buddies ftb ON ft.id = ftb.fishing_trip_id
+      LEFT JOIN users u ON ftb.buddy_id = u.id
+      WHERE ft.id = $1
+      GROUP BY ft.id, ft.user_id, ft.target_species, ft.date, ft.location, ft.hours_fished, 
+      ft.water_temperature, ft.number_of_persons, ft.number_of_fish, ft.perch_over_40, 
+      ft.number_of_bonus_pike, ft.number_of_bonus_zander, ft.bag_total, ft.comment, 
+      ft.latitude, ft.longitude
       LIMIT 1
     `;
 
@@ -101,10 +107,7 @@ export class FishingTripService {
     return result.rows;
   }
 
-  async update(
-    id: number,
-    data: CompleteTripInput
-  ): Promise<FishingTrip | null> {
+  async update(id: number, data: FishingTrip): Promise<FishingTrip | null> {
     const keys = Object.keys(data);
     const setClause = keys
       .map((key, index) => `${key} = $${index + 1}`)

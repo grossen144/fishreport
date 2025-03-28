@@ -16,9 +16,7 @@ import {
 } from "@mui/material";
 import { Add as AddIcon, Remove as RemoveIcon } from "@mui/icons-material";
 import axios from "axios";
-import { FishingTrip } from "@fishreport/shared/types/fishing-trip";
 import { useParams } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext";
 
 interface NumberInputProps {
   label: string;
@@ -60,8 +58,7 @@ const NumberInput: React.FC<NumberInputProps> = ({
 
 export const ActiveTrip: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { user } = useAuth();
-  const [trip, setTrip] = useState<FishingTrip | null>(null);
+  const [trip, setTrip] = useState<any | null>(null);
   const [catches, setCatches] = useState<any[]>([]);
   const [showAddCatch, setShowAddCatch] = useState(false);
   const [error, setError] = useState<string>("");
@@ -73,7 +70,7 @@ export const ActiveTrip: React.FC = () => {
   >([]);
 
   // Form state
-  const [hoursFishing, setHoursFishing] = useState("");
+  const [hoursFishing, setHoursFishing] = useState<string>("");
   const [numberOfFish, setNumberOfFish] = useState("");
   const [perchOver40cm, setPerchOver40cm] = useState("");
   const [numberOfBonusPike, setNumberOfBonusPike] = useState("");
@@ -82,6 +79,46 @@ export const ActiveTrip: React.FC = () => {
   const [waterTemperature, setWaterTemperature] = useState("");
   const [bagTotal, setBagTotal] = useState("");
   const [comment, setComment] = useState("");
+  const [numberOfPersons, setNumberOfPersons] = useState("1");
+
+  // Auto-save function with debounce
+  const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(
+    null
+  );
+
+  const capitalize = (str: string | undefined) => {
+    if (!str) return "";
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  };
+
+  useEffect(() => {
+    const fetchBuddies = async () => {
+      try {
+        const response = await axios.get("http://localhost:3003/api/users", {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
+        setAvailableBuddies(response.data);
+
+        // If we have trip data with buddy_ids, set the selected buddies
+        if (trip?.buddy_ids) {
+          const selectedBuddyObjects = (trip.buddy_ids as number[])
+            .map((id: number) =>
+              response.data.find(
+                (b: { id: number; name: string }) => b.id === id
+              )
+            )
+            .filter((b): b is { id: number; name: string } => b !== undefined);
+          setSelectedBuddies(selectedBuddyObjects);
+        }
+      } catch (error) {
+        console.error("Error fetching buddies:", error);
+      }
+    };
+
+    fetchBuddies();
+  }, [trip?.buddy_ids]); // Add trip?.buddy_ids as a dependency
 
   useEffect(() => {
     const fetchTrip = async () => {
@@ -95,41 +132,67 @@ export const ActiveTrip: React.FC = () => {
           }
         );
         setTrip(response.data);
+
+        // Convert decimal to whole number string for the toggle buttons
+        const hoursValue = response.data.hours_fished
+          ? Math.round(response.data.hours_fished).toString()
+          : "";
+        setHoursFishing(hoursValue);
+        setNumberOfFish(response.data.number_of_fish?.toString() || "");
+        setPerchOver40cm(response.data.perch_over_40?.toString() || "");
+        setNumberOfBonusPike(
+          response.data.number_of_bonus_pike?.toString() || ""
+        );
+        setNumberOfBonusZander(
+          response.data.number_of_bonus_zander?.toString() || ""
+        );
+        setNumberOfBonusPerch(
+          response.data.number_of_bonus_perch?.toString() || ""
+        );
+        setWaterTemperature(response.data.water_temperature?.toString() || "");
+        setBagTotal(response.data.bag_total?.toString() || "");
+        setComment(response.data.comment || "");
+        setNumberOfPersons(response.data.number_of_persons?.toString() || "1");
       } catch (error) {
         setError("Error fetching trip details");
       }
     };
 
-    const fetchBuddies = async () => {
+    fetchTrip();
+  }, [id]);
+
+  // Auto-save function with debounce
+  const autoSave = async (data: any) => {
+    // Clear any existing timer
+    if (debounceTimer) {
+      clearTimeout(debounceTimer);
+    }
+
+    // Set a new timer
+    const timer = setTimeout(async () => {
       try {
-        const response = await axios.get("http://localhost:3003/api/users", {
+        await axios.patch(`http://localhost:3003/api/trips/${id}`, data, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         });
-        setAvailableBuddies(response.data);
       } catch (error) {
-        console.error("Error fetching buddies:", error);
+        console.error("Error auto-saving:", error);
+        setError("Error saving changes");
+      }
+    }, 2000); // 2 second delay
+
+    setDebounceTimer(timer);
+  };
+
+  // Cleanup timer on component unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
       }
     };
-
-    fetchTrip();
-    fetchBuddies();
-  }, [id]);
-
-  // Auto-save function
-  const autoSave = async (data: any) => {
-    try {
-      await axios.patch(`http://localhost:3003/api/trips/${id}`, data, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-    } catch (error) {
-      console.error("Error auto-saving:", error);
-      setError("Error saving changes");
-    }
-  };
+  }, [debounceTimer]);
 
   const handleEndTrip = async () => {
     try {
@@ -164,16 +227,6 @@ export const ActiveTrip: React.FC = () => {
 
   return (
     <Container maxWidth="sm">
-      {/* Trip Header */}
-      <Paper sx={{ p: 2, mb: 2 }}>
-        <Typography variant="h6">
-          {(trip?.target_species ?? "") + " Trip"}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          {trip?.date ? new Date(trip.date as string).toLocaleDateString() : ""}
-        </Typography>
-      </Paper>
-
       {/* Catches List */}
       <Paper sx={{ p: 2, mb: 2 }}>
         <Typography variant="h6" gutterBottom>
@@ -193,34 +246,37 @@ export const ActiveTrip: React.FC = () => {
 
       {/* Trip Details Form */}
       <Paper sx={{ p: 2, mb: 2 }}>
-        <Typography variant="h6" gutterBottom>
-          Trip Details
-        </Typography>
         <Stack spacing={3}>
+          <Box>
+            <Typography variant="h6">
+              {capitalize(trip?.target_species as string) + " Fishing Trip"}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {trip?.date
+                ? new Date(trip.date as string).toLocaleDateString()
+                : ""}
+            </Typography>
+          </Box>
           {/* Hours Fishing */}
           <Box>
             <Typography gutterBottom>Hours fishing</Typography>
-            <ToggleButtonGroup
-              exclusive
-              fullWidth
-              value={hoursFishing}
+            <Slider
+              value={parseFloat(hoursFishing) || 0}
               onChange={(_, value) => {
-                if (value) {
-                  setHoursFishing(value);
-                  autoSave({ hours_fished: parseFloat(value) });
-                }
+                setHoursFishing(value.toString());
+                autoSave({ hours_fished: value });
               }}
-            >
-              <ToggleButton value="2">2h</ToggleButton>
-              <ToggleButton value="4">4h</ToggleButton>
-              <ToggleButton value="6">6h</ToggleButton>
-              <ToggleButton value="8">8h</ToggleButton>
-            </ToggleButtonGroup>
+              min={1}
+              max={24}
+              marks
+              step={1}
+              valueLabelDisplay="auto"
+            />
           </Box>
 
           {/* Number of Fish */}
           <NumberInput
-            label={`Caught ${trip?.target_species}`}
+            label={`Caught ${trip?.target_species} in total`}
             value={numberOfFish}
             onChange={(value) => {
               setNumberOfFish(value);
@@ -233,7 +289,7 @@ export const ActiveTrip: React.FC = () => {
           {trip?.target_species === "perch" && (
             <>
               <NumberInput
-                label="Perch over 40 cm"
+                label="Caught perch over 40 cm"
                 value={perchOver40cm}
                 onChange={(value) => {
                   setPerchOver40cm(value);
@@ -325,6 +381,71 @@ export const ActiveTrip: React.FC = () => {
             />
           </Box>
 
+          {/* Fishing Buddies */}
+          <Box>
+            <Typography gutterBottom>Fishing buddies</Typography>
+            <Stack spacing={1}>
+              {availableBuddies.map((buddy) => (
+                <Chip
+                  key={buddy.id}
+                  label={buddy.name}
+                  onClick={() => {
+                    if (selectedBuddies.some((b) => b.id === buddy.id)) {
+                      setSelectedBuddies((prev) =>
+                        prev.filter((b) => b.id !== buddy.id)
+                      );
+                      autoSave({
+                        buddy_ids: selectedBuddies
+                          .map((b) => b.id)
+                          .filter((id) => id !== buddy.id),
+                      });
+                    } else {
+                      setSelectedBuddies((prev) => [...prev, buddy]);
+                      autoSave({
+                        buddy_ids: [
+                          ...selectedBuddies.map((b) => b.id),
+                          buddy.id,
+                        ],
+                      });
+                    }
+                  }}
+                  color={
+                    selectedBuddies.some((b) => b.id === buddy.id)
+                      ? "primary"
+                      : "default"
+                  }
+                  sx={{
+                    width: "100%",
+                    height: "48px",
+                    "& .MuiChip-label": {
+                      fontSize: "1rem",
+                    },
+                  }}
+                />
+              ))}
+            </Stack>
+            {selectedBuddies.length > 0 && (
+              <Typography sx={{ mt: 1, color: "text.secondary" }}>
+                Selected: {selectedBuddies.length}{" "}
+                {selectedBuddies.length === 1 ? "buddy" : "buddies"}
+              </Typography>
+            )}
+          </Box>
+          <Box>
+            <Typography gutterBottom>Number of persons</Typography>
+            <ToggleButtonGroup
+              exclusive
+              fullWidth
+              value={numberOfPersons}
+              onChange={(_, value) => value && setNumberOfPersons(value)}
+            >
+              <ToggleButton value="1">1</ToggleButton>
+              <ToggleButton value="2">2</ToggleButton>
+              <ToggleButton value="3">3</ToggleButton>
+              <ToggleButton value="4">4</ToggleButton>
+              <ToggleButton value="5">5</ToggleButton>
+            </ToggleButtonGroup>
+          </Box>
           {/* Comment */}
           <Box>
             <Typography gutterBottom>Comment</Typography>
@@ -345,40 +466,6 @@ export const ActiveTrip: React.FC = () => {
               }}
               placeholder="Add any notes about the trip..."
             />
-          </Box>
-
-          {/* Fishing Buddies */}
-          <Box>
-            <Typography gutterBottom>Fishing buddies</Typography>
-            <Stack spacing={1}>
-              {availableBuddies.map((buddy) => (
-                <Chip
-                  key={buddy.id}
-                  label={buddy.name}
-                  onClick={() => {
-                    if (selectedBuddies.some((b) => b.id === buddy.id)) {
-                      setSelectedBuddies((prev) =>
-                        prev.filter((b) => b.id !== buddy.id)
-                      );
-                    } else {
-                      setSelectedBuddies((prev) => [...prev, buddy]);
-                    }
-                  }}
-                  color={
-                    selectedBuddies.some((b) => b.id === buddy.id)
-                      ? "primary"
-                      : "default"
-                  }
-                  sx={{
-                    width: "100%",
-                    height: "48px",
-                    "& .MuiChip-label": {
-                      fontSize: "1rem",
-                    },
-                  }}
-                />
-              ))}
-            </Stack>
           </Box>
         </Stack>
       </Paper>

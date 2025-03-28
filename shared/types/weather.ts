@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const weatherSchema = z.object({
+export const weatherDataSchema = z.object({
   weather: z.array(
     z.object({
       main: z.string(),
@@ -32,7 +32,7 @@ export const weatherSchema = z.object({
   }),
 });
 
-export type WeatherData = z.infer<typeof weatherSchema>;
+export type WeatherData = z.infer<typeof weatherDataSchema>;
 
 export const lunarDataSchema = z.array(
   z.object({

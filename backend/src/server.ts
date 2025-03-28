@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import reportRoutes from "./routes/tripRoutes";
+import reportRoutes from "./routes/fishingTripRoutes";
 import weatherRoutes from "./routes/weatherRoutes";
 import { errorHandler } from "./middleware/error";
 import authRoutes from "./routes/authRoutes";

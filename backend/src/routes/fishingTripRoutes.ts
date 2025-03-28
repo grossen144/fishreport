@@ -8,27 +8,28 @@ const tripController = new TripsController();
 // Apply authentication middleware to all routes
 router.use(authenticateToken);
 
-// Create a new report
-router.post("/start", tripController.startTrip);
-router.post("/complete", tripController.completeTrip);
+// Create a new trip
+router.post("/start", tripController.startFishingTrip);
+router.post("/complete", tripController.completeFishingTrip);
 
-// Get all reports for the authenticated user
-router.get("/", tripController.getReports);
+// Get all trips for the authenticated user
+router.get("/", tripController.getFishingTrips);
 
 // Get fishing statistics
 router.get("/stats", tripController.getStats);
 
 // Get active trip for the current user
-router.get("/active", tripController.getActiveTrip);
+router.get("/active", tripController.hasActiveFishingTrip);
 
 // Get a specific report by ID
-router.get("/:id", tripController.getReportById);
+router.get("/:id", tripController.getFishingTripById);
 
-// Update a report
-router.put("/:id", tripController.updateReport);
+// Update a trip
+router.put("/:id", tripController.updateFishingTrip);
+router.patch("/:id", tripController.updateFishingTrip);
 
-// Delete a report
-router.delete("/:id", tripController.deleteReport);
+// Delete a trip
+router.delete("/:id", tripController.deleteFishingTrip);
 
 // Add this line with the other routes
 router.post("/:id/buddies", tripController.addFishingTripBuddies);

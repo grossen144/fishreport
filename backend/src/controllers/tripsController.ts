@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { pool } from "../services/db.service";
-import { weatherSchema } from "@fishreport/shared/types/weather";
+import { weatherDataSchema } from "@fishreport/shared/types/weather";
 import { ZodError } from "zod";
 import {
   addTripBuddiesSchema,
@@ -28,7 +28,7 @@ export class TripsController {
     this.fishingTripService = new FishingTripService(pool);
   }
 
-  startTrip = async (req: Request, res: Response) => {
+  startFishingTrip = async (req: Request, res: Response) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -52,7 +52,7 @@ export class TripsController {
     }
   };
 
-  completeTrip = async (req: Request, res: Response) => {
+  completeFishingTrip = async (req: Request, res: Response) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -76,7 +76,7 @@ export class TripsController {
     }
   };
 
-  getReports = async (req: Request, res: Response) => {
+  getFishingTrips = async (req: Request, res: Response) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -93,7 +93,7 @@ export class TripsController {
     }
   };
 
-  getReportById = async (req: Request, res: Response) => {
+  getFishingTripById = async (req: Request, res: Response) => {
     const reportId = Number(req.params.id);
 
     if (isNaN(reportId)) {
@@ -108,16 +108,16 @@ export class TripsController {
         return res.status(401).json({ error: "Unauthorized" });
       }
 
-      const trip = await this.fishingTripService.findById(reportId);
-      if (!trip) {
+      const fishingTrip = await this.fishingTripService.findById(reportId);
+      if (!fishingTrip) {
         return res.status(404).json({ error: "Report not found" });
       }
 
-      if (trip.user_id !== userId.toString()) {
+      if (Number(fishingTrip.user_id) !== userId) {
         return res.status(403).json({ error: "Forbidden" });
       }
 
-      return res.json(trip);
+      return res.json(fishingTrip);
     } catch (error) {
       if (error instanceof Error) {
         return res.status(400).json({ error: error.message });
@@ -126,7 +126,7 @@ export class TripsController {
     }
   };
 
-  updateReport = async (req: Request, res: Response) => {
+  updateFishingTrip = async (req: Request, res: Response) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -140,7 +140,7 @@ export class TripsController {
         return res.status(404).json({ error: "Trip not found" });
       }
 
-      if (trip.user_id !== userId.toString()) {
+      if (Number(trip.user_id) !== userId) {
         return res.status(403).json({ error: "Forbidden" });
       }
 
@@ -157,7 +157,7 @@ export class TripsController {
     }
   };
 
-  deleteReport = async (req: Request, res: Response) => {
+  deleteFishingTrip = async (req: Request, res: Response) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -171,7 +171,7 @@ export class TripsController {
         return res.status(404).json({ error: "Trip not found" });
       }
 
-      if (trip.user_id !== userId.toString()) {
+      if (Number(trip.user_id) !== userId) {
         return res.status(403).json({ error: "Forbidden" });
       }
 
@@ -230,7 +230,7 @@ export class TripsController {
       }
 
       const data = await response.json();
-      const parsedData = weatherSchema.parse(data);
+      const parsedData = weatherDataSchema.parse(data);
       return res.json(parsedData);
     } catch (error) {
       if (error instanceof Error) {
@@ -301,7 +301,7 @@ export class TripsController {
     }
   };
 
-  getActiveTrip = async (req: Request, res: Response) => {
+  hasActiveFishingTrip = async (req: Request, res: Response) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
