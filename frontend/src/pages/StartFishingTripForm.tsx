@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Container,
   Paper,
@@ -41,16 +41,19 @@ export const StartTripForm: React.FC = () => {
   const [hasActiveTrip, setHasActiveTrip] = useState(false);
   const [activeTripId, setActiveTripId] = useState<number | null>(null);
 
-  const fetchWeatherData = async (lat: number, lon: number) => {
-    try {
-      const response = await axios.get<WeatherData>(
-        `http://localhost:3003/api/weather?lat=${lat}&lon=${lon}&date=${date}`
-      );
-      setWeatherData(response.data);
-    } catch (error) {
-      setError("Error fetching weather data");
-    }
-  };
+  const fetchWeatherData = useCallback(
+    async (lat: number, lon: number) => {
+      try {
+        const response = await axios.get<WeatherData>(
+          `http://localhost:3003/api/weather?lat=${lat}&lon=${lon}&date=${date}`
+        );
+        setWeatherData(response.data);
+      } catch (error) {
+        setError("Error fetching weather data");
+      }
+    },
+    [date]
+  );
 
   const fetchLunarData = async (date: string) => {
     try {
@@ -116,7 +119,7 @@ export const StartTripForm: React.FC = () => {
         }
       );
     }
-  }, [useCurrentLocation, date]);
+  }, [useCurrentLocation, date, fetchWeatherData]);
 
   useEffect(() => {
     // Number of persons is current user + number of buddies
