@@ -155,7 +155,7 @@ const Dashboard: React.FC = () => {
 
   return (
     <div style={containerStyle}>
-      <h1 style={welcomeStyle}>Welcome back, {user?.name}!</h1>
+      <h1 style={welcomeStyle}>Welcome back, {user?.name}</h1>
 
       <div style={gridStyle}>
         <div style={cardStyle}>
