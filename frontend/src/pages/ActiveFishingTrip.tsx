@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Container,
   Paper,
@@ -106,7 +106,7 @@ export const ActiveTrip: React.FC = () => {
     return str.charAt(0).toUpperCase() + str.slice(1);
   };
 
-  const fetchCatches = async () => {
+  const fetchCatches = useCallback(async () => {
     try {
       const response = await axios.get(
         `http://localhost:3003/api/trips/${id}/catches`,
@@ -121,7 +121,7 @@ export const ActiveTrip: React.FC = () => {
       console.error("Error fetching catches:", error);
       setError("Error fetching catches");
     }
-  };
+  }, [id]);
 
   useEffect(() => {
     const fetchBuddies = async () => {
@@ -192,7 +192,7 @@ export const ActiveTrip: React.FC = () => {
     };
 
     fetchTrip();
-  }, [id]);
+  }, [id, fetchCatches]);
 
   useEffect(() => {
     if (useCurrentLocation) {
