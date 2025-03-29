@@ -63,25 +63,25 @@ export const StartTripForm: React.FC = () => {
     }
   };
 
-  const getWindDirection = (deg: number): string => {
-    const directions = [
-      { min: 337.5, max: 22.5, name: "North" },
-      { min: 22.5, max: 67.5, name: "Northeast" },
-      { min: 67.5, max: 112.5, name: "East" },
-      { min: 112.5, max: 157.5, name: "Southeast" },
-      { min: 157.5, max: 202.5, name: "South" },
-      { min: 202.5, max: 247.5, name: "Southwest" },
-      { min: 247.5, max: 292.5, name: "West" },
-      { min: 292.5, max: 337.5, name: "Northwest" },
-    ];
+  // const getWindDirection = (deg: number): string => {
+  //   const directions = [
+  //     { min: 337.5, max: 22.5, name: "North" },
+  //     { min: 22.5, max: 67.5, name: "Northeast" },
+  //     { min: 67.5, max: 112.5, name: "East" },
+  //     { min: 112.5, max: 157.5, name: "Southeast" },
+  //     { min: 157.5, max: 202.5, name: "South" },
+  //     { min: 202.5, max: 247.5, name: "Southwest" },
+  //     { min: 247.5, max: 292.5, name: "West" },
+  //     { min: 292.5, max: 337.5, name: "Northwest" },
+  //   ];
 
-    // Handle North's special case (337.5-360 and 0-22.5)
-    if (deg >= 337.5 || deg < 22.5) return "North";
+  //   // Handle North's special case (337.5-360 and 0-22.5)
+  //   if (deg >= 337.5 || deg < 22.5) return "North";
 
-    return (
-      directions.find((dir) => deg >= dir.min && deg < dir.max)?.name ?? "North"
-    );
-  };
+  //   return (
+  //     directions.find((dir) => deg >= dir.min && deg < dir.max)?.name ?? "North"
+  //   );
+  // };
 
   useEffect(() => {
     const fetchBuddies = async () => {
@@ -209,6 +209,12 @@ export const StartTripForm: React.FC = () => {
         <Typography variant="h5" gutterBottom>
           Start New Trip
         </Typography>
+
+        {error && (
+          <Typography color="error" sx={{ mb: 2 }}>
+            {error}
+          </Typography>
+        )}
 
         {hasActiveTrip ? (
           <Box sx={{ textAlign: "center", py: 4 }}>
